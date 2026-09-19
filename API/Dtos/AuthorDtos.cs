@@ -18,3 +18,7 @@ public partial record AuthorUpdateRequest
 {
     public Guid Id { get; init; }
 }
+
+/// <summary>The whole mutable row: every property is required as the entity requires it, and a null one clears the column.</summary>
+[Facet(typeof(Author), [nameof(Author.CreatedAtUtc)], GenerateToSource = false)]
+public partial record AuthorReplaceRequest;

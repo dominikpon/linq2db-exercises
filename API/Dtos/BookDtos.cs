@@ -22,3 +22,7 @@ public partial record BookUpdateRequest
 {
     public Guid Id { get; init; }
 }
+
+/// <summary>The whole mutable row: every property is required as the entity requires it, and a null one clears the column.</summary>
+[Facet(typeof(Book), [nameof(Book.CreatedAtUtc)], GenerateToSource = false)]
+public partial record BookReplaceRequest;

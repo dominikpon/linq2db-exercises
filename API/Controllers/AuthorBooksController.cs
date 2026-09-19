@@ -19,31 +19,21 @@ public class AuthorBooksController(LibraryDatabase db) : ControllerBase
     [HttpPost(nameof(Link))]
     public void Link([FromQuery] Guid authorId, [FromQuery] Guid bookId)
     {
-        if (!db.Authors().Any(a => a.Id == authorId))
-            throw new KeyNotFoundException("that author does not exist");
-        if (!db.Books().Any(b => b.Id == bookId))
-            throw new KeyNotFoundException("that book does not exist");
-
-        if (db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == bookId))
-            return;
-
-        db.Insert(new AuthorBook { AuthorId = authorId, BookId = bookId });
+        throw new NotImplementedException();
     }
 
     /// <summary>Removes an author's credit on a book. Idempotent: unlinking an already-unlinked pair is a no-op.</summary>
     [HttpDelete(nameof(Unlink))]
     public void Unlink([FromQuery] Guid authorId, [FromQuery] Guid bookId)
     {
-        db.AuthorBooks()
-            .Where(l => l.AuthorId == authorId && l.BookId == bookId)
-            .Delete();
+        throw new NotImplementedException();
     }
 
     /// <summary>Whether an author is currently credited on a book.</summary>
     [HttpGet(nameof(IsLinked))]
     public bool IsLinked([FromQuery] Guid authorId, [FromQuery] Guid bookId)
     {
-        return db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == bookId);
+        throw new NotImplementedException();
     }
 
     #region Tests: Link

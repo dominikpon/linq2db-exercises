@@ -19,28 +19,13 @@ public partial class AuthorsController
     [HttpPost(nameof(Create))]
     public AuthorResponse Create([FromBody] AuthorCreateRequest request)
     {
-        ValidateName(request.FirstName, request.LastName);
-        ValidateWebsite(request.Website);
-        ValidateBirthDate(request.BirthDate);
-
-        var author = new Author
-        {
-            Id = Guid.NewGuid(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Bio = request.Bio,
-            Nationality = request.Nationality,
-            Website = request.Website,
-            BirthDate = request.BirthDate,
-            CreatedAtUtc = DateTime.UtcNow
-        };
-
-        db.Insert(author);
-        return new AuthorResponse(author);
+        throw new NotImplementedException();
     }
 
     /// <summary>
-    ///     Replaces the columns the request actually supplies; anything left out is left alone.
+    ///     Changes only the columns the request actually supplies; anything left out is left alone.
+    ///     This is the <c>PATCH</c> half of updating: to set a nullable column back to <c>null</c>, use
+    ///     <see cref="Replace" />.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -55,44 +40,30 @@ public partial class AuthorsController
     /// </remarks>
     /// <exception cref="ValidationException">A validation rule is broken.</exception>
     /// <exception cref="KeyNotFoundException">No row has that id.</exception>
-    [HttpPut(nameof(Update))]
+    [HttpPatch(nameof(Update))]
     public AuthorResponse Update([FromBody] AuthorUpdateRequest request)
     {
-        var existing = db.Authors().FirstOrDefault(a => a.Id == request.Id)
-                       ?? throw new KeyNotFoundException("that author does not exist");
+        throw new NotImplementedException();
+    }
 
-        if (request.FirstName != null)
-        {
-            ValidateName(request.FirstName, existing.LastName);
-            existing.FirstName = request.FirstName;
-        }
-
-        if (request.LastName != null)
-        {
-            ValidateName(existing.FirstName, request.LastName);
-            existing.LastName = request.LastName;
-        }
-
-        if (request.Bio != null)
-            existing.Bio = request.Bio;
-
-        if (request.Nationality != null)
-            existing.Nationality = request.Nationality;
-
-        if (request.Website != null)
-        {
-            ValidateWebsite(request.Website);
-            existing.Website = request.Website;
-        }
-
-        if (request.BirthDate != null)
-        {
-            ValidateBirthDate(request.BirthDate);
-            existing.BirthDate = request.BirthDate;
-        }
-
-        db.Update(existing);
-        return new AuthorResponse(existing);
+    /// <summary>
+    ///     Replaces the whole mutable row with the request. Every column is overwritten with what was
+    ///     sent, nulls included, so this is also how a nullable column is cleared.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The row is found by <see cref="AuthorReplaceRequest.Id" />. <see cref="Author.Id" /> and
+    ///         <see cref="Author.CreatedAtUtc" /> are never changed. The validation rules of
+    ///         <see cref="Create" /> apply to the values sent.
+    ///     </para>
+    ///     <para>Idempotent: sending the same request twice leaves the same row state.</para>
+    /// </remarks>
+    /// <exception cref="ValidationException">A validation rule is broken.</exception>
+    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
+    [HttpPut(nameof(Replace))]
+    public AuthorResponse Replace([FromBody] AuthorReplaceRequest request)
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>Removes an author for good — but only once nothing they wrote is still credited to them.</summary>
@@ -101,33 +72,7 @@ public partial class AuthorsController
     [HttpDelete(nameof(Delete))]
     public void Delete([FromQuery] Guid id)
     {
-        var author = db.Authors().FirstOrDefault(a => a.Id == id) ??
-                     throw new KeyNotFoundException("that author does not exist");
-
-        if (db.AuthorBooks().Any(l => l.AuthorId == id))
-            throw new InvalidOperationException("unlink this author's books first");
-
-        db.Delete(author);
-    }
-
-    private static void ValidateName(string firstName, string lastName)
-    {
-        if (string.IsNullOrWhiteSpace(firstName))
-            throw new ValidationException("first name cannot be blank");
-        if (string.IsNullOrWhiteSpace(lastName))
-            throw new ValidationException("last name cannot be blank");
-    }
-
-    private static void ValidateWebsite(string? website)
-    {
-        if (website != null && !website.StartsWith("http://") && !website.StartsWith("https://"))
-            throw new ValidationException("website must start with http:// or https://");
-    }
-
-    private static void ValidateBirthDate(DateOnly? birthDate)
-    {
-        if (birthDate != null && birthDate > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new ValidationException("birth date cannot be in the future");
+        throw new NotImplementedException();
     }
 
     #region Tests: Create
@@ -251,6 +196,109 @@ public partial class AuthorsController
             var id = LibrarySeed.AuthorIdOf(1);
             Assert.Throws<ValidationException>(() =>
                 AuthorsController.Update(new AuthorUpdateRequest { Id = id, Website = "not-a-url" }));
+            Assert.Equal("Elena", AuthorRow(id).FirstName);
+        }
+    }
+
+    #endregion
+
+    #region Tests: Replace
+
+    public class ReplaceTests : LibraryTest
+    {
+        private static AuthorReplaceRequest Full(Guid id)
+        {
+            return new AuthorReplaceRequest(
+                id,
+                "New",
+                "Name",
+                "A new bio.",
+                "Danish",
+                "https://new.example.com",
+                new DateOnly(1980, 2, 3));
+        }
+
+        [Fact]
+        public void Replaces_every_column()
+        {
+            var id = LibrarySeed.AuthorIdOf(1);
+            AuthorsController.Replace(Full(id));
+
+            var saved = AuthorRow(id);
+            Assert.Equal("New", saved.FirstName);
+            Assert.Equal("Name", saved.LastName);
+            Assert.Equal("A new bio.", saved.Bio);
+            Assert.Equal("Danish", saved.Nationality);
+            Assert.Equal("https://new.example.com", saved.Website);
+            Assert.Equal(new DateOnly(1980, 2, 3), saved.BirthDate);
+        }
+
+        [Fact]
+        public void Clears_nullable_columns_sent_as_null()
+        {
+            var id = LibrarySeed.AuthorIdOf(1);
+            Assert.NotNull(AuthorRow(id).Website);
+
+            AuthorsController.Replace(Full(id) with { Bio = null, Nationality = null, Website = null, BirthDate = null });
+
+            var saved = AuthorRow(id);
+            Assert.Null(saved.Bio);
+            Assert.Null(saved.Nationality);
+            Assert.Null(saved.Website);
+            Assert.Null(saved.BirthDate);
+        }
+
+        [Fact]
+        public void Returns_the_saved_row()
+        {
+            var result = AuthorsController.Replace(Full(LibrarySeed.AuthorIdOf(1)));
+            Assert.Equal("New", result.FirstName);
+        }
+
+        [Fact]
+        public void Is_idempotent()
+        {
+            var id = LibrarySeed.AuthorIdOf(1);
+            AuthorsController.Replace(Full(id));
+            var first = AuthorRow(id);
+            AuthorsController.Replace(Full(id));
+            var second = AuthorRow(id);
+
+            Assert.Equal(first.FirstName, second.FirstName);
+            Assert.Equal(first.Website, second.Website);
+            Assert.Equal(11, AuthorCount);
+        }
+
+        [Fact]
+        public void Preserves_the_creation_time()
+        {
+            var id = LibrarySeed.AuthorIdOf(1);
+            var before = AuthorRow(id).CreatedAtUtc;
+            AuthorsController.Replace(Full(id));
+            Assert.Equal(before, AuthorRow(id).CreatedAtUtc);
+        }
+
+        [Fact]
+        public void Touches_no_other_row()
+        {
+            AuthorsController.Replace(Full(LibrarySeed.AuthorIdOf(1)));
+            Assert.Equal("Tobias", AuthorRow(LibrarySeed.AuthorIdOf(2)).FirstName);
+        }
+
+        [Fact]
+        public void Throws_when_the_row_does_not_exist()
+        {
+            Assert.Throws<KeyNotFoundException>(() => AuthorsController.Replace(Full(Guid.NewGuid())));
+        }
+
+        [Fact]
+        public void Throws_when_a_value_is_invalid_and_changes_nothing()
+        {
+            var id = LibrarySeed.AuthorIdOf(1);
+            Assert.Throws<ValidationException>(() => AuthorsController.Replace(Full(id) with { FirstName = "  " }));
+            Assert.Throws<ValidationException>(() => AuthorsController.Replace(Full(id) with { Website = "not-a-url" }));
+            Assert.Throws<ValidationException>(() =>
+                AuthorsController.Replace(Full(id) with { BirthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) }));
             Assert.Equal("Elena", AuthorRow(id).FirstName);
         }
     }

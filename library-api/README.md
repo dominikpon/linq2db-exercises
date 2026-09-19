@@ -1,6 +1,6 @@
 # Library API — web-client checks
 
-Black-box tests for the finished Library API, written from the point of view of a browser/TypeScript
+Black-box tests for the Library API once the exercises are solved (until then every request fails), written from the point of view of a browser/TypeScript
 client rather than of the C# code: JSON in, JSON out over `curl`, and `sqlite3` looking straight at
 the database file to see what actually got stored. They exist to discover where the JSON <-> C# boundary bites (dates without a `Z`, blank
 form fields, unicode in query strings, ...), not to pin status codes — codes are printed for context and

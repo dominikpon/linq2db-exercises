@@ -1,27 +1,5 @@
 # linq2db TDD Exercises
 
-This is Day 1: **white-box** TDD. The entities, DTOs, and method signatures already exist; the
-job is to fill in bodies until the pinned test suite passes. Two exercise sets, same shape:
-
-- **Groceries** — a single, wide entity (`Infa/GroceryItem.cs`), exercised via `GroceriesController`.
-- **Library** — a many-to-many relationship (`Infa/Author.cs`, `Infa/Book.cs`, `Infa/AuthorBook.cs`),
-  exercised via `AuthorsController`, `BooksController` and `AuthorBooksController`.
-
-Day 2 is a different skill — **black-box** API testing, where nothing exists yet and you design
-the entities, DTOs and routes yourself against a fixed external contract. See
-[`day2/README.md`](day2/README.md).
-
-Both exercise sets also have black-box API checks (curl + sqlite3, no C#): Day 2's are the
-exercise itself; the Library ones in [`library-api/`](library-api/README.md) probe how the finished
-API behaves for a web client.
-
-## Running things
-
-```bash
-dotnet test API/API.csproj                                   # everything
-dotnet test API/API.csproj --filter "FullyQualifiedName~Search"  # one method's test region
-dotnet run --project API/API.csproj                           # the API itself, Swagger at /swagger
-```
 
 ## How an exercise is laid out
 
@@ -30,8 +8,9 @@ always in this order:
 
 1. An XML doc comment — the spec. `<summary>` says what it does, `<param>`/`<returns>` say what
    goes in and out, and `<exception>` enumerates every validation rule as a thrown type.
-2. The method body — this is what you implement. Some already work (read them for the house
-   style); most either throw `NotImplementedException` or are simply empty.
+2. The method body — this is what you implement. Every one starts as
+   `throw new NotImplementedException();`, so the whole suite begins red. Helpers (validation,
+   uniqueness checks) are yours to write too.
 3. A `#region Tests: MethodName` immediately below the method — the behavior pinned down as
    `[Fact]`s. Don't edit these, and don't change the method's signature; make the body satisfy them.
 
@@ -62,13 +41,10 @@ whole controller is done to find out something's wrong.
 
 1. **Validate the request.** Same rule as queries — `ValidationException` first, before any
    database access.
-2. **Look up what you're acting on.** `db.Xxx().FirstOrDefault(x => x.Id == id) ?? throw new
-   KeyNotFoundException(...)` for a single row; a bare `.Where(...)` for something bulk.
+2. **Look up what you're acting on.** `db.Xxx().FirstOrDefault(x => x.Id == id) ?? throw new KeyNotFoundException(...)` for a single row; a bare `.Where(...)` for something bulk.
 3. **Check state-dependent business rules.** `InvalidOperationException` for anything that would
    leave the data inconsistent — deleting an author who's still credited on a book, taking a
-   barcode that's already in use, and so on. This is the check that can't be expressed as a
-   doc-comment `<exception>` on the request shape alone, because it depends on what's already in
-   the table.
+   barcode that's already in use, and so on. This is the check that can't depend on the request alone, because it depends on what's already in the table.
 4. **Mutate.**
    - Single row, a handful of columns: assign properties on the entity you looked up, then
      `db.Update(existing)`.
@@ -81,15 +57,22 @@ whole controller is done to find out something's wrong.
 
 ## Update requests
 
-A single update endpoint per entity takes a request where every property except the id is
-optional, so a caller can send only the columns they're changing. A `null` (or omitted) property
-means "leave the column alone"; anything else is validated and applied. Consequently, a nullable
-column can't be set back to `null` through the update endpoint.
+Each entity has two ways to change an existing row, both idempotent:
+
+- **`PUT .../Replace`** replaces the whole mutable row. The request carries every mutable column
+  (the entity minus `CreatedAtUtc`), so a `null` on a nullable column really clears it. A client's
+  edit form GETs the object, changes it and PUTs the whole thing back.
+- **`PATCH .../Update`** changes only what was sent. Every property except the id is optional, and
+  a `null` (or omitted) property means "leave the column alone". It can never clear a nullable
+  column; that is what `Replace` is for.
+
+Both apply the same validation rules as `Create`, to the values that are actually being written.
 
 ## DTOs
 
 Request/response DTOs (`API/Dtos/`) are generated from the entities with the
 [`Facet`](https://github.com/Tim-Maes/Facet) source generator rather than written by hand — see
 the `[Facet(...)]` attribute on each `partial record`. `exclude` keeps server-owned columns
-(`Id`, `CreatedAtUtc`, ...) off create requests; update requests add `NullableProperties = true`
-so every generated property becomes optional, plus a hand-declared `Id`.
+(`Id`, `CreatedAtUtc`, ...) off create requests; replace requests keep the `Id` and drop only
+`CreatedAtUtc`; patch requests add `NullableProperties = true` so every generated property becomes
+optional, plus a hand-declared `Id`.

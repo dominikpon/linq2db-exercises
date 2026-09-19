@@ -15,10 +15,7 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetAll))]
     public List<BookResponse> GetAll()
     {
-        return db.Books()
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>One book looked up by primary key.</summary>
@@ -26,17 +23,14 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetById))]
     public BookResponse GetById([FromQuery] Guid id)
     {
-        return db.Books()
-            .Where(b => b.Id == id)
-            .Select(BookResponse.Projection)
-            .FirstOrDefault() ?? throw new KeyNotFoundException("that book does not exist");
+        throw new NotImplementedException();
     }
 
     /// <summary>How many books the table holds.</summary>
     [HttpGet(nameof(Count))]
     public int Count()
     {
-        return db.Books().Count();
+        throw new NotImplementedException();
     }
 
     /// <summary>Free-text search over <see cref="Book.Title" />. A partial, case-insensitive match is enough.</summary>
@@ -45,15 +39,7 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(Search))]
     public List<BookResponse> Search([FromQuery] string q)
     {
-        if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
-            throw new ValidationException("search term must be at least two characters");
-
-        var term = q.Trim();
-        return db.Books()
-            .Where(b => b.Title.Contains(term))
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>One page of books, ordered by title.</summary>
@@ -66,41 +52,14 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetPage))]
     public List<BookResponse> GetPage([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
-        if (page < 1)
-            throw new ValidationException("page must be at least 1");
-        if (size < 1 || size > 100)
-            throw new ValidationException("size must be between 1 and 100");
-
-        return db.Books()
-            .OrderBy(b => b.Title)
-            .Skip((page - 1) * size)
-            .Take(size)
-            .Select(BookResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>Every book, sorted by a caller-chosen column. Sorting happens in SQL.</summary>
     [HttpGet(nameof(GetSorted))]
     public List<BookResponse> GetSorted([FromQuery] BookSort by, [FromQuery] bool descending = false)
     {
-        var q = by switch
-        {
-            BookSort.Title => descending
-                ? db.Books().OrderByDescending(b => b.Title)
-                : db.Books().OrderBy(b => b.Title),
-            BookSort.Price => descending
-                ? db.Books().OrderByDescending(b => b.PriceDkk)
-                : db.Books().OrderBy(b => b.PriceDkk),
-            BookSort.Published => descending
-                ? db.Books().OrderByDescending(b => b.PublishedDate)
-                : db.Books().OrderBy(b => b.PublishedDate),
-            BookSort.Created => descending
-                ? db.Books().OrderByDescending(b => b.CreatedAtUtc)
-                : db.Books().OrderBy(b => b.CreatedAtUtc),
-            _ => throw new ArgumentOutOfRangeException(nameof(by))
-        };
-
-        return q.Select(BookResponse.Projection).ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -122,26 +81,7 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
         [FromQuery] decimal? minPrice = null,
         [FromQuery] decimal? maxPrice = null)
     {
-        if (minPrice != null && maxPrice != null && minPrice > maxPrice)
-            throw new ValidationException("minPrice cannot be greater than maxPrice");
-
-        var query = db.Books().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(q))
-            query = query.Where(b => b.Title.Contains(q));
-        if (genre != null)
-            query = query.Where(b => b.Genre == genre);
-        if (outOfPrint != null)
-            query = query.Where(b => b.IsOutOfPrint == outOfPrint);
-        if (minPrice != null)
-            query = query.Where(b => b.PriceDkk >= minPrice);
-        if (maxPrice != null)
-            query = query.Where(b => b.PriceDkk <= maxPrice);
-
-        return query
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>Every book credited to one author, ordered by title.</summary>
@@ -149,14 +89,7 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetByAuthor))]
     public List<BookResponse> GetByAuthor([FromQuery] Guid authorId)
     {
-        if (!db.Authors().Any(a => a.Id == authorId))
-            throw new KeyNotFoundException("that author does not exist");
-
-        return db.Books()
-            .Where(b => db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == b.Id))
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>Books with no author credited at all.</summary>
@@ -164,18 +97,14 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetWithoutAuthors))]
     public List<BookResponse> GetWithoutAuthors()
     {
-        return db.Books()
-            .Where(b => !db.AuthorBooks().Any(l => l.BookId == b.Id))
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>The average price across the catalogue, as a scalar.</summary>
     [HttpGet(nameof(GetAveragePrice))]
     public decimal GetAveragePrice()
     {
-        return db.Books().Average(b => b.PriceDkk);
+        throw new NotImplementedException();
     }
 
     #region Tests: GetAll

@@ -19,29 +19,13 @@ public partial class BooksController
     [HttpPost(nameof(Create))]
     public BookResponse Create([FromBody] BookCreateRequest request)
     {
-        ValidateTitle(request.Title);
-        ValidatePrice(request.PriceDkk);
-        ValidateIsbn(request.Isbn);
-        EnsureIsbnIsFree(request.Isbn, null);
-
-        var book = new Book
-        {
-            Id = Guid.NewGuid(),
-            Title = request.Title,
-            Isbn = request.Isbn,
-            Genre = request.Genre,
-            PriceDkk = request.PriceDkk,
-            IsOutOfPrint = false,
-            PublishedDate = request.PublishedDate,
-            CreatedAtUtc = DateTime.UtcNow
-        };
-
-        db.Insert(book);
-        return new BookResponse(book);
+        throw new NotImplementedException();
     }
 
     /// <summary>
-    ///     Replaces the columns the request actually supplies; anything left out is left alone.
+    ///     Changes only the columns the request actually supplies; anything left out is left alone.
+    ///     This is the <c>PATCH</c> half of updating: to set a nullable column back to <c>null</c>, use
+    ///     <see cref="Replace" />.
     /// </summary>
     /// <remarks>
     ///     Every property on the request except the id is optional: <c>null</c> means "leave this
@@ -51,42 +35,32 @@ public partial class BooksController
     /// <exception cref="ValidationException">A validation rule is broken.</exception>
     /// <exception cref="KeyNotFoundException">No row has that id.</exception>
     /// <exception cref="InvalidOperationException">Another book already carries the same ISBN.</exception>
-    [HttpPut(nameof(Update))]
+    [HttpPatch(nameof(Update))]
     public BookResponse Update([FromBody] BookUpdateRequest request)
     {
-        var existing = db.Books().FirstOrDefault(b => b.Id == request.Id)
-                       ?? throw new KeyNotFoundException("that book does not exist");
+        throw new NotImplementedException();
+    }
 
-        if (request.Title != null)
-        {
-            ValidateTitle(request.Title);
-            existing.Title = request.Title;
-        }
-
-        if (request.Genre != null)
-            existing.Genre = request.Genre.Value;
-
-        if (request.PriceDkk != null)
-        {
-            ValidatePrice(request.PriceDkk.Value);
-            existing.PriceDkk = request.PriceDkk.Value;
-        }
-
-        if (request.IsOutOfPrint != null)
-            existing.IsOutOfPrint = request.IsOutOfPrint.Value;
-
-        if (request.Isbn != null)
-        {
-            ValidateIsbn(request.Isbn);
-            EnsureIsbnIsFree(request.Isbn, existing.Id);
-            existing.Isbn = request.Isbn;
-        }
-
-        if (request.PublishedDate != null)
-            existing.PublishedDate = request.PublishedDate;
-
-        db.Update(existing);
-        return new BookResponse(existing);
+    /// <summary>
+    ///     Replaces the whole mutable row with the request. Every column is overwritten with what was
+    ///     sent, nulls included, so this is also how a nullable column is cleared.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The row is found by <see cref="BookReplaceRequest.Id" />. <see cref="Book.Id" /> and
+    ///         <see cref="Book.CreatedAtUtc" /> are never changed. The validation rules of
+    ///         <see cref="Create" /> apply to the values sent; unlike on create, <c>IsOutOfPrint</c> is
+    ///         taken from the request.
+    ///     </para>
+    ///     <para>Idempotent: sending the same request twice leaves the same row state.</para>
+    /// </remarks>
+    /// <exception cref="ValidationException">A validation rule is broken.</exception>
+    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
+    /// <exception cref="InvalidOperationException">Another book already carries the same ISBN.</exception>
+    [HttpPut(nameof(Replace))]
+    public BookResponse Replace([FromBody] BookReplaceRequest request)
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>Removes a book for good — but only once no author is still credited on it.</summary>
@@ -95,13 +69,7 @@ public partial class BooksController
     [HttpDelete(nameof(Delete))]
     public void Delete([FromQuery] Guid id)
     {
-        var book = db.Books().FirstOrDefault(b => b.Id == id) ??
-                   throw new KeyNotFoundException("that book does not exist");
-
-        if (db.AuthorBooks().Any(l => l.BookId == id))
-            throw new InvalidOperationException("unlink this book's authors first");
-
-        db.Delete(book);
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -112,10 +80,7 @@ public partial class BooksController
     [HttpPost(nameof(MarkOutOfPrint))]
     public void MarkOutOfPrint([FromQuery] Guid id)
     {
-        var book = db.Books().FirstOrDefault(b => b.Id == id) ??
-                   throw new KeyNotFoundException("that book does not exist");
-        book.IsOutOfPrint = true;
-        db.Update(book);
+        throw new NotImplementedException();
     }
 
     /// <summary>Puts an out-of-print book back in print. Idempotent, exactly like <see cref="MarkOutOfPrint" />.</summary>
@@ -123,35 +88,7 @@ public partial class BooksController
     [HttpPost(nameof(MarkInPrint))]
     public void MarkInPrint([FromQuery] Guid id)
     {
-        var book = db.Books().FirstOrDefault(b => b.Id == id) ??
-                   throw new KeyNotFoundException("that book does not exist");
-        book.IsOutOfPrint = false;
-        db.Update(book);
-    }
-
-    private static void ValidateTitle(string title)
-    {
-        if (string.IsNullOrWhiteSpace(title))
-            throw new ValidationException("title cannot be blank");
-    }
-
-    private static void ValidatePrice(decimal price)
-    {
-        if (price < 0)
-            throw new ValidationException("price cannot be negative");
-    }
-
-    private static void ValidateIsbn(string? isbn)
-    {
-        if (isbn != null && (isbn.Length != 13 || !isbn.All(char.IsDigit)))
-            throw new ValidationException("isbn must be null or exactly 13 digits");
-    }
-
-    private void EnsureIsbnIsFree(string? isbn, Guid? excluding)
-    {
-        if (isbn == null) return;
-        if (db.Books().Any(b => b.Isbn == isbn && b.Id != excluding))
-            throw new InvalidOperationException("that isbn is already taken");
+        throw new NotImplementedException();
     }
 
     #region Tests: Create
@@ -283,6 +220,116 @@ public partial class BooksController
         {
             var id = LibrarySeed.BookIdOf(1);
             BooksController.Update(new BookUpdateRequest { Id = id, Isbn = "9788700000011" });
+            Assert.Equal("9788700000011", BookRow(id).Isbn);
+        }
+    }
+
+    #endregion
+
+    #region Tests: Replace
+
+    public class ReplaceTests : LibraryTest
+    {
+        private static BookReplaceRequest Full(Guid id)
+        {
+            return new BookReplaceRequest(
+                id,
+                "New Title",
+                "1112223334445",
+                Genre.Mystery,
+                55.5m,
+                true,
+                new DateOnly(2001, 2, 3));
+        }
+
+        [Fact]
+        public void Replaces_every_column()
+        {
+            var id = LibrarySeed.BookIdOf(1);
+            BooksController.Replace(Full(id));
+
+            var saved = BookRow(id);
+            Assert.Equal("New Title", saved.Title);
+            Assert.Equal("1112223334445", saved.Isbn);
+            Assert.Equal(Genre.Mystery, saved.Genre);
+            Assert.Equal(55.5m, saved.PriceDkk);
+            Assert.True(saved.IsOutOfPrint);
+            Assert.Equal(new DateOnly(2001, 2, 3), saved.PublishedDate);
+        }
+
+        [Fact]
+        public void Clears_nullable_columns_sent_as_null()
+        {
+            var id = LibrarySeed.BookIdOf(1);
+            Assert.NotNull(BookRow(id).Isbn);
+
+            BooksController.Replace(Full(id) with { Isbn = null, PublishedDate = null });
+
+            var saved = BookRow(id);
+            Assert.Null(saved.Isbn);
+            Assert.Null(saved.PublishedDate);
+        }
+
+        [Fact]
+        public void Puts_a_book_back_in_print()
+        {
+            var id = LibrarySeed.BookIdOf(3);
+            Assert.True(BookRow(id).IsOutOfPrint);
+            BooksController.Replace(Full(id) with { IsOutOfPrint = false, Isbn = null });
+            Assert.False(BookRow(id).IsOutOfPrint);
+        }
+
+        [Fact]
+        public void Is_idempotent()
+        {
+            var id = LibrarySeed.BookIdOf(1);
+            BooksController.Replace(Full(id));
+            var first = BookRow(id);
+            BooksController.Replace(Full(id));
+            var second = BookRow(id);
+
+            Assert.Equal(first.Title, second.Title);
+            Assert.Equal(first.Isbn, second.Isbn);
+            Assert.Equal(13, BookCount);
+        }
+
+        [Fact]
+        public void Preserves_the_creation_time()
+        {
+            var id = LibrarySeed.BookIdOf(1);
+            var before = BookRow(id).CreatedAtUtc;
+            BooksController.Replace(Full(id));
+            Assert.Equal(before, BookRow(id).CreatedAtUtc);
+        }
+
+        [Fact]
+        public void Throws_when_the_row_does_not_exist()
+        {
+            Assert.Throws<KeyNotFoundException>(() => BooksController.Replace(Full(Guid.NewGuid())));
+        }
+
+        [Fact]
+        public void Throws_when_a_value_is_invalid_and_changes_nothing()
+        {
+            var id = LibrarySeed.BookIdOf(1);
+            Assert.Throws<ValidationException>(() => BooksController.Replace(Full(id) with { Title = " " }));
+            Assert.Throws<ValidationException>(() => BooksController.Replace(Full(id) with { PriceDkk = -1m }));
+            Assert.Throws<ValidationException>(() => BooksController.Replace(Full(id) with { Isbn = "123" }));
+            Assert.Equal("The Glass Meridian", BookRow(id).Title);
+        }
+
+        [Fact]
+        public void Throws_when_the_isbn_belongs_to_another_book()
+        {
+            Assert.Throws<InvalidOperationException>(() =>
+                BooksController.Replace(Full(LibrarySeed.BookIdOf(1)) with { Isbn = "9788700000028" }));
+        }
+
+        [Fact]
+        public void Accepts_its_own_isbn_unchanged()
+        {
+            var id = LibrarySeed.BookIdOf(1);
+            BooksController.Replace(Full(id) with { Isbn = "9788700000011" });
             Assert.Equal("9788700000011", BookRow(id).Isbn);
         }
     }

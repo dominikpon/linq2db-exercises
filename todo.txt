@@ -1,6 +1,12 @@
+aktuelt:
+- nested object / join/loadwith() queries: design entities asscoation / dtos properties ?
+
 strat:
 - do day 1 exercises
     - then do presentation content and moodle page
+
+presentation: books
+student exercises: authors and AuthorBook junction
 
 day 2: frontend for day 1 exercises?
 - is it possible to make setup with plumbing where only feature implementations are required? (

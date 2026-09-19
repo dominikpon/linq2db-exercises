@@ -15,10 +15,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetAll))]
     public List<AuthorResponse> GetAll()
     {
-        return db.Authors()
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Select(AuthorResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>One author looked up by primary key.</summary>
@@ -26,17 +23,14 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetById))]
     public AuthorResponse GetById([FromQuery] Guid id)
     {
-        return db.Authors()
-            .Where(a => a.Id == id)
-            .Select(AuthorResponse.Projection)
-            .FirstOrDefault() ?? throw new KeyNotFoundException("that author does not exist");
+        throw new NotImplementedException();
     }
 
     /// <summary>How many authors the table holds.</summary>
     [HttpGet(nameof(Count))]
     public int Count()
     {
-        return db.Authors().Count();
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -48,15 +42,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(Search))]
     public List<AuthorResponse> Search([FromQuery] string q)
     {
-        if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
-            throw new ValidationException("search term must be at least two characters");
-
-        var term = q.Trim();
-        return db.Authors()
-            .Where(a => a.FirstName.Contains(term) || a.LastName.Contains(term))
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Select(AuthorResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>One page of authors, ordered by last name then first name.</summary>
@@ -69,17 +55,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetPage))]
     public List<AuthorResponse> GetPage([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
-        if (page < 1)
-            throw new ValidationException("page must be at least 1");
-        if (size < 1 || size > 100)
-            throw new ValidationException("size must be between 1 and 100");
-
-        return db.Authors()
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Skip((page - 1) * size)
-            .Take(size)
-            .Select(AuthorResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -88,21 +64,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetSorted))]
     public List<AuthorResponse> GetSorted([FromQuery] AuthorSort by, [FromQuery] bool descending = false)
     {
-        var q = by switch
-        {
-            AuthorSort.Name => descending
-                ? db.Authors().OrderByDescending(a => a.LastName).ThenByDescending(a => a.FirstName)
-                : db.Authors().OrderBy(a => a.LastName).ThenBy(a => a.FirstName),
-            AuthorSort.BirthDate => descending
-                ? db.Authors().OrderByDescending(a => a.BirthDate)
-                : db.Authors().OrderBy(a => a.BirthDate),
-            AuthorSort.Created => descending
-                ? db.Authors().OrderByDescending(a => a.CreatedAtUtc)
-                : db.Authors().OrderBy(a => a.CreatedAtUtc),
-            _ => throw new ArgumentOutOfRangeException(nameof(by))
-        };
-
-        return q.Select(AuthorResponse.Projection).ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -122,24 +84,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         [FromQuery] DateOnly? bornAfter = null,
         [FromQuery] DateOnly? bornBefore = null)
     {
-        if (bornAfter != null && bornBefore != null && bornAfter > bornBefore)
-            throw new ValidationException("bornAfter cannot be later than bornBefore");
-
-        var query = db.Authors().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(q))
-            query = query.Where(a => a.FirstName.Contains(q) || a.LastName.Contains(q));
-        if (nationality != null)
-            query = query.Where(a => a.Nationality == nationality);
-        if (bornAfter != null)
-            query = query.Where(a => a.BirthDate >= bornAfter);
-        if (bornBefore != null)
-            query = query.Where(a => a.BirthDate <= bornBefore);
-
-        return query
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Select(AuthorResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>Every author credited on one book, ordered by last name.</summary>
@@ -147,14 +92,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetForBook))]
     public List<AuthorResponse> GetForBook([FromQuery] Guid bookId)
     {
-        if (!db.Books().Any(b => b.Id == bookId))
-            throw new KeyNotFoundException("that book does not exist");
-
-        return db.Authors()
-            .Where(a => db.AuthorBooks().Any(l => l.BookId == bookId && l.AuthorId == a.Id))
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Select(AuthorResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     /// <summary>Authors with no book credited to them at all.</summary>
@@ -162,11 +100,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetWithoutBooks))]
     public List<AuthorResponse> GetWithoutBooks()
     {
-        return db.Authors()
-            .Where(a => !db.AuthorBooks().Any(l => l.AuthorId == a.Id))
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Select(AuthorResponse.Projection)
-            .ToList();
+        throw new NotImplementedException();
     }
 
     #region Tests: GetAll
