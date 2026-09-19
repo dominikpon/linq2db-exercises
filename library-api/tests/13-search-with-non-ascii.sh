@@ -1,0 +1,11 @@
+req POST /Authors/Create '{"firstName":"Hans","lastName":"Ørsted"}'
+qget /Authors/Search "q=Ørsted"
+expect "url-encoded unicode search, same case" "$(jq length <<<"$BODY")" "1"
+qget /Authors/Search "q=ørsted"
+expect "unicode search, different case" "$(jq length <<<"$BODY")" "1"
+qget /Authors/Search "q=ELENA"
+expect "ascii search, different case" "$(jq length <<<"$BODY")" "1"
+qget /Authors/Search "q=%25"
+expect "a literal percent sign is not a wildcard" "$(jq length <<<"$BODY")" "0"
+qget /Authors/Search "q=_a"
+expect "a literal underscore is not a wildcard" "$(jq length <<<"$BODY")" "$(sql "SELECT COUNT(*) FROM Authors WHERE FirstName LIKE '%\_a%' ESCAPE '\' OR LastName LIKE '%\_a%' ESCAPE '\'")"

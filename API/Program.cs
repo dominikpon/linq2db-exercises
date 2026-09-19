@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using API;
 using Microsoft.AspNetCore.Mvc;
@@ -8,8 +9,8 @@ using Microsoft.AspNetCore.Diagnostics;
 var builder = WebApplication.CreateBuilder(args);
 
 var options = new DataOptions().UseSQLite(Environment.GetEnvironmentVariable("DB") ??"Data Source=dev.db");
-builder.Services.AddSingleton(new DataOptions<GroceryDatabase>(options));
-builder.Services.AddScoped<GroceryDatabase>();
+builder.Services.AddSingleton(new DataOptions<LibraryDatabase>(options));
+builder.Services.AddScoped<LibraryDatabase>();
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
@@ -26,8 +27,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<GroceryDatabase>();
-    GrocerySeed.EnsureSeeded(db);
+    var libraryDb = scope.ServiceProvider.GetRequiredService<LibraryDatabase>();
+    LibrarySeed.EnsureSeeded(libraryDb);
 }
 
 app.UseExceptionHandler();
@@ -37,8 +38,6 @@ app.UseSwaggerUi();
 app.MapControllers();
 app.Run();
 
-public class MyException : Exception;
-
 public class MyCustomExceptionHandler : IExceptionHandler
 {
     public ValueTask<bool> TryHandleAsync(HttpContext httpContext,
@@ -46,10 +45,13 @@ public class MyCustomExceptionHandler : IExceptionHandler
         CancellationToken cancellationToken)
     {
      
-        if (exception is ValidationException)
+        httpContext.Response.StatusCode = exception switch
         {
-            httpContext.Response.StatusCode = 401;
-        }
+            ValidationException => StatusCodes.Status400BadRequest,
+            KeyNotFoundException => StatusCodes.Status404NotFound,
+            InvalidOperationException => StatusCodes.Status409Conflict,
+            _ => StatusCodes.Status500InternalServerError
+        };
         httpContext.Response.WriteAsJsonAsync(new ProblemDetails()
         {
             Title = exception.Message

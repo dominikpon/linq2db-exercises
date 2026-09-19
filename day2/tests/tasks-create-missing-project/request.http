@@ -1,0 +1,7 @@
+POST http://127.0.0.1:5299/Tasks/Create
+Content-Type: application/json
+
+{
+  "projectId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "title": "Orphan task"
+}

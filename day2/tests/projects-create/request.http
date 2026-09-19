@@ -1,0 +1,7 @@
+POST http://127.0.0.1:5299/Projects/Create
+Content-Type: application/json
+
+{
+  "name": "Website Redesign",
+  "description": "Q1 revamp"
+}

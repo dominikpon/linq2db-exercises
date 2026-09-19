@@ -1,0 +1,8 @@
+strat:
+- do day 1 exercises
+    - then do presentation content and moodle page
+
+day 2: frontend for day 1 exercises?
+- is it possible to make setup with plumbing where only feature implementations are required? (
+
+But how can i make frontend development with TDD style? Maybe e2e test that verifies when clicking a button with text "X", a certain outcome is reached?
