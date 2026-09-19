@@ -22,6 +22,7 @@ run_one() {
     DB="Data Source=$db" ASPNETCORE_URLS="$BASE" \
         dotnet run --project "$ROOT/API/API.csproj" --no-build --no-launch-profile >"$log" 2>&1 &
     pid=$!
+    disown "$pid"
     for _ in $(seq 1 30); do
         if curl -s -o /dev/null "$BASE/Authors/Count"; then ready=true; break; fi
         sleep 1

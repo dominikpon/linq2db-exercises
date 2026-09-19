@@ -23,15 +23,15 @@ public class GroceryItem
 {
     [PrimaryKey] public Guid Id { get; set; }
 
-    [Column, NotNull] public string Name { get; set; } = "";
+    [Column] [NotNull] public string Name { get; set; } = "";
     [Column] public string? Brand { get; set; }
-    [Column, NotNull] public string Category { get; set; } = "";
+    [Column] [NotNull] public string Category { get; set; } = "";
     [Column] public string? Tags { get; set; }
     [Column] public string? Barcode { get; set; }
 
     [Column] public decimal PriceDkk { get; set; }
     [Column] public decimal? DiscountPercent { get; set; }
-    [Column] [Range(1, Int32.MaxValue)] public int StockCount { get; set; }
+    [Column] [Range(1, int.MaxValue)] public int StockCount { get; set; }
     [Column] public int TimesPurchased { get; set; }
     [Column] public double WeightKg { get; set; }
     [Column] public double? RatingAvg { get; set; }

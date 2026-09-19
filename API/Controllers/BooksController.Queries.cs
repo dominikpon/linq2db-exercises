@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using API.Dtos;
-using API.Testing;
+using API.Enums;
 using Infa;
-using LinqToDB;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 
@@ -22,26 +21,6 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
             .ToList();
     }
 
-    #region Tests: GetAll
-
-    public class GetAllTests : LibraryTest
-    {
-        [Fact]
-        public void Returns_every_seeded_book()
-        {
-            Assert.Equal(13, BooksController.GetAll().Count);
-        }
-
-        [Fact]
-        public void Is_ordered_by_title()
-        {
-            var titles = BooksController.GetAll().Select(b => b.Title).ToList();
-            Assert.Equal(titles.OrderBy(t => t, StringComparer.Ordinal), titles);
-        }
-    }
-
-    #endregion
-
     /// <summary>One book looked up by primary key.</summary>
     /// <exception cref="KeyNotFoundException">No row has that id.</exception>
     [HttpGet(nameof(GetById))]
@@ -53,26 +32,6 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
             .FirstOrDefault() ?? throw new KeyNotFoundException("that book does not exist");
     }
 
-    #region Tests: GetById
-
-    public class GetByIdTests : LibraryTest
-    {
-        [Fact]
-        public void Returns_the_book_for_a_known_id()
-        {
-            var book = BooksController.GetById(LibrarySeed.BookIdOf(1));
-            Assert.Equal("The Glass Meridian", book.Title);
-        }
-
-        [Fact]
-        public void Throws_when_the_id_is_unknown()
-        {
-            Assert.Throws<KeyNotFoundException>(() => BooksController.GetById(Guid.NewGuid()));
-        }
-    }
-
-    #endregion
-
     /// <summary>How many books the table holds.</summary>
     [HttpGet(nameof(Count))]
     public int Count()
@@ -80,22 +39,9 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
         return db.Books().Count();
     }
 
-    #region Tests: Count
-
-    public class CountTests : LibraryTest
-    {
-        [Fact]
-        public void Counts_the_seeded_rows()
-        {
-            Assert.Equal(13, BooksController.Count());
-        }
-    }
-
-    #endregion
-
-    /// <summary>Free-text search over <see cref="Book.Title"/>. A partial, case-insensitive match is enough.</summary>
+    /// <summary>Free-text search over <see cref="Book.Title" />. A partial, case-insensitive match is enough.</summary>
     /// <param name="q">At least two characters, otherwise the search is meaningless.</param>
-    /// <exception cref="ValidationException"><paramref name="q"/> is null, blank or shorter than two characters.</exception>
+    /// <exception cref="ValidationException"><paramref name="q" /> is null, blank or shorter than two characters.</exception>
     [HttpGet(nameof(Search))]
     public List<BookResponse> Search([FromQuery] string q)
     {
@@ -110,37 +56,13 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
             .ToList();
     }
 
-    #region Tests: Search
-
-    public class SearchTests : LibraryTest
-    {
-        [Fact]
-        public void Matches_the_title()
-        {
-            var result = BooksController.Search("wake");
-            Assert.Single(result);
-            Assert.Equal("Northern Wake", result[0].Title);
-        }
-
-        [Fact]
-        public void Is_case_insensitive()
-        {
-            Assert.Equal(BooksController.Search("wake").Count, BooksController.Search("WAKE").Count);
-        }
-
-        [Fact]
-        public void Throws_on_a_too_short_term()
-        {
-            Assert.Throws<ValidationException>(() => BooksController.Search("a"));
-        }
-    }
-
-    #endregion
-
     /// <summary>One page of books, ordered by title.</summary>
     /// <param name="page">1-based page number.</param>
     /// <param name="size">Rows per page, at most 100.</param>
-    /// <exception cref="ValidationException"><paramref name="page"/> is below 1, or <paramref name="size"/> is outside 1..100.</exception>
+    /// <exception cref="ValidationException">
+    ///     <paramref name="page" /> is below 1, or <paramref name="size" /> is outside
+    ///     1..100.
+    /// </exception>
     [HttpGet(nameof(GetPage))]
     public List<BookResponse> GetPage([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
@@ -157,78 +79,33 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
             .ToList();
     }
 
-    #region Tests: GetPage
-
-    public class GetPageTests : LibraryTest
-    {
-        [Fact]
-        public void Returns_the_requested_slice()
-        {
-            Assert.Equal(5, BooksController.GetPage(2, 5).Count);
-        }
-
-        [Fact]
-        public void The_last_page_can_be_short()
-        {
-            Assert.Equal(3, BooksController.GetPage(3, 5).Count);
-        }
-
-        [Fact]
-        public void Throws_on_nonsense_paging()
-        {
-            Assert.Throws<ValidationException>(() => BooksController.GetPage(0, 10));
-            Assert.Throws<ValidationException>(() => BooksController.GetPage(1, 0));
-        }
-    }
-
-    #endregion
-
     /// <summary>Every book, sorted by a caller-chosen column. Sorting happens in SQL.</summary>
     [HttpGet(nameof(GetSorted))]
     public List<BookResponse> GetSorted([FromQuery] BookSort by, [FromQuery] bool descending = false)
     {
         var q = by switch
         {
-            BookSort.Title => descending ? db.Books().OrderByDescending(b => b.Title) : db.Books().OrderBy(b => b.Title),
-            BookSort.Price => descending ? db.Books().OrderByDescending(b => b.PriceDkk) : db.Books().OrderBy(b => b.PriceDkk),
-            BookSort.Published => descending ? db.Books().OrderByDescending(b => b.PublishedDate) : db.Books().OrderBy(b => b.PublishedDate),
-            BookSort.Created => descending ? db.Books().OrderByDescending(b => b.CreatedAtUtc) : db.Books().OrderBy(b => b.CreatedAtUtc),
+            BookSort.Title => descending
+                ? db.Books().OrderByDescending(b => b.Title)
+                : db.Books().OrderBy(b => b.Title),
+            BookSort.Price => descending
+                ? db.Books().OrderByDescending(b => b.PriceDkk)
+                : db.Books().OrderBy(b => b.PriceDkk),
+            BookSort.Published => descending
+                ? db.Books().OrderByDescending(b => b.PublishedDate)
+                : db.Books().OrderBy(b => b.PublishedDate),
+            BookSort.Created => descending
+                ? db.Books().OrderByDescending(b => b.CreatedAtUtc)
+                : db.Books().OrderBy(b => b.CreatedAtUtc),
             _ => throw new ArgumentOutOfRangeException(nameof(by))
         };
 
         return q.Select(BookResponse.Projection).ToList();
     }
 
-    #region Tests: GetSorted
-
-    public class GetSortedTests : LibraryTest
-    {
-        [Fact]
-        public void Sorts_by_price_ascending()
-        {
-            var prices = BooksController.GetSorted(BookSort.Price).Select(b => b.PriceDkk).ToList();
-            Assert.Equal(prices.OrderBy(p => p), prices);
-        }
-
-        [Fact]
-        public void Sorts_by_creation_descending()
-        {
-            var result = BooksController.GetSorted(BookSort.Created, descending: true);
-            Assert.Equal("The Last Ledger", result[0].Title);
-        }
-
-        [Fact]
-        public void Returns_the_whole_table_whatever_the_sort()
-        {
-            Assert.Equal(13, BooksController.GetSorted(BookSort.Title).Count);
-        }
-    }
-
-    #endregion
-
     /// <summary>
-    /// A filtered list. Every parameter that is supplied narrows the result; every parameter left
-    /// null is ignored.
+    ///     A filtered list. Every parameter that is supplied narrows the result; every parameter left
+    ///     null is ignored.
     /// </summary>
     /// <param name="q">Matches the title, case-insensitive and partial.</param>
     /// <param name="genre">Exact match.</param>
@@ -236,7 +113,7 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     /// <param name="minPrice">Inclusive lower price bound.</param>
     /// <param name="maxPrice">Inclusive upper price bound.</param>
     /// <returns>Matching books, ordered by title. No parameters at all returns everything.</returns>
-    /// <exception cref="ValidationException"><paramref name="minPrice"/> is greater than <paramref name="maxPrice"/>.</exception>
+    /// <exception cref="ValidationException"><paramref name="minPrice" /> is greater than <paramref name="maxPrice" />.</exception>
     [HttpGet(nameof(GetFiltered))]
     public List<BookResponse> GetFiltered(
         [FromQuery] string? q = null,
@@ -266,6 +143,173 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
             .Select(BookResponse.Projection)
             .ToList();
     }
+
+    /// <summary>Every book credited to one author, ordered by title.</summary>
+    /// <exception cref="KeyNotFoundException">No author has that id.</exception>
+    [HttpGet(nameof(GetByAuthor))]
+    public List<BookResponse> GetByAuthor([FromQuery] Guid authorId)
+    {
+        if (!db.Authors().Any(a => a.Id == authorId))
+            throw new KeyNotFoundException("that author does not exist");
+
+        return db.Books()
+            .Where(b => db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == b.Id))
+            .OrderBy(b => b.Title)
+            .Select(BookResponse.Projection)
+            .ToList();
+    }
+
+    /// <summary>Books with no author credited at all.</summary>
+    /// <returns>1 book on the seed data.</returns>
+    [HttpGet(nameof(GetWithoutAuthors))]
+    public List<BookResponse> GetWithoutAuthors()
+    {
+        return db.Books()
+            .Where(b => !db.AuthorBooks().Any(l => l.BookId == b.Id))
+            .OrderBy(b => b.Title)
+            .Select(BookResponse.Projection)
+            .ToList();
+    }
+
+    /// <summary>The average price across the catalogue, as a scalar.</summary>
+    [HttpGet(nameof(GetAveragePrice))]
+    public decimal GetAveragePrice()
+    {
+        return db.Books().Average(b => b.PriceDkk);
+    }
+
+    #region Tests: GetAll
+
+    public class GetAllTests : LibraryTest
+    {
+        [Fact]
+        public void Returns_every_seeded_book()
+        {
+            Assert.Equal(13, BooksController.GetAll().Count);
+        }
+
+        [Fact]
+        public void Is_ordered_by_title()
+        {
+            var titles = BooksController.GetAll().Select(b => b.Title).ToList();
+            Assert.Equal(titles.OrderBy(t => t, StringComparer.Ordinal), titles);
+        }
+    }
+
+    #endregion
+
+    #region Tests: GetById
+
+    public class GetByIdTests : LibraryTest
+    {
+        [Fact]
+        public void Returns_the_book_for_a_known_id()
+        {
+            var book = BooksController.GetById(LibrarySeed.BookIdOf(1));
+            Assert.Equal("The Glass Meridian", book.Title);
+        }
+
+        [Fact]
+        public void Throws_when_the_id_is_unknown()
+        {
+            Assert.Throws<KeyNotFoundException>(() => BooksController.GetById(Guid.NewGuid()));
+        }
+    }
+
+    #endregion
+
+    #region Tests: Count
+
+    public class CountTests : LibraryTest
+    {
+        [Fact]
+        public void Counts_the_seeded_rows()
+        {
+            Assert.Equal(13, BooksController.Count());
+        }
+    }
+
+    #endregion
+
+    #region Tests: Search
+
+    public class SearchTests : LibraryTest
+    {
+        [Fact]
+        public void Matches_the_title()
+        {
+            var result = BooksController.Search("wake");
+            Assert.Single(result);
+            Assert.Equal("Northern Wake", result[0].Title);
+        }
+
+        [Fact]
+        public void Is_case_insensitive()
+        {
+            Assert.Equal(BooksController.Search("wake").Count, BooksController.Search("WAKE").Count);
+        }
+
+        [Fact]
+        public void Throws_on_a_too_short_term()
+        {
+            Assert.Throws<ValidationException>(() => BooksController.Search("a"));
+        }
+    }
+
+    #endregion
+
+    #region Tests: GetPage
+
+    public class GetPageTests : LibraryTest
+    {
+        [Fact]
+        public void Returns_the_requested_slice()
+        {
+            Assert.Equal(5, BooksController.GetPage(2, 5).Count);
+        }
+
+        [Fact]
+        public void The_last_page_can_be_short()
+        {
+            Assert.Equal(3, BooksController.GetPage(3, 5).Count);
+        }
+
+        [Fact]
+        public void Throws_on_nonsense_paging()
+        {
+            Assert.Throws<ValidationException>(() => BooksController.GetPage(0));
+            Assert.Throws<ValidationException>(() => BooksController.GetPage(1, 0));
+        }
+    }
+
+    #endregion
+
+    #region Tests: GetSorted
+
+    public class GetSortedTests : LibraryTest
+    {
+        [Fact]
+        public void Sorts_by_price_ascending()
+        {
+            var prices = BooksController.GetSorted(BookSort.Price).Select(b => b.PriceDkk).ToList();
+            Assert.Equal(prices.OrderBy(p => p), prices);
+        }
+
+        [Fact]
+        public void Sorts_by_creation_descending()
+        {
+            var result = BooksController.GetSorted(BookSort.Created, true);
+            Assert.Equal("The Last Ledger", result[0].Title);
+        }
+
+        [Fact]
+        public void Returns_the_whole_table_whatever_the_sort()
+        {
+            Assert.Equal(13, BooksController.GetSorted(BookSort.Title).Count);
+        }
+    }
+
+    #endregion
 
     #region Tests: GetFiltered
 
@@ -302,21 +346,6 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
 
     #endregion
 
-    /// <summary>Every book credited to one author, ordered by title.</summary>
-    /// <exception cref="KeyNotFoundException">No author has that id.</exception>
-    [HttpGet(nameof(GetByAuthor))]
-    public List<BookResponse> GetByAuthor([FromQuery] Guid authorId)
-    {
-        if (!db.Authors().Any(a => a.Id == authorId))
-            throw new KeyNotFoundException("that author does not exist");
-
-        return db.Books()
-            .Where(b => db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == b.Id))
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
-    }
-
     #region Tests: GetByAuthor
 
     public class GetByAuthorTests : LibraryTest
@@ -343,18 +372,6 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
 
     #endregion
 
-    /// <summary>Books with no author credited at all.</summary>
-    /// <returns>1 book on the seed data.</returns>
-    [HttpGet(nameof(GetWithoutAuthors))]
-    public List<BookResponse> GetWithoutAuthors()
-    {
-        return db.Books()
-            .Where(b => !db.AuthorBooks().Any(l => l.BookId == b.Id))
-            .OrderBy(b => b.Title)
-            .Select(BookResponse.Projection)
-            .ToList();
-    }
-
     #region Tests: GetWithoutAuthors
 
     public class GetWithoutAuthorsTests : LibraryTest
@@ -369,13 +386,6 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     }
 
     #endregion
-
-    /// <summary>The average price across the catalogue, as a scalar.</summary>
-    [HttpGet(nameof(GetAveragePrice))]
-    public decimal GetAveragePrice()
-    {
-        return db.Books().Average(b => b.PriceDkk);
-    }
 
     #region Tests: GetAveragePrice
 

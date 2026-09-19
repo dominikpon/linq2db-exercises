@@ -1,10 +1,10 @@
 before=$(sql "SELECT COUNT(*) FROM Books")
 req POST /Books/Create '{"title":'
 info "truncated JSON" "$STATUS"
-req POST /Books/Create '{"title":"y","genre":"Fiction","priceDkk":"abc"}'
+req POST /Books/Create '{"title":"y","genre":0,"priceDkk":"abc"}'
 info "price as a string" "$STATUS"
 req POST /Books/Create '{"title":"z","genre":"Poetry","priceDkk":1}'
-info "unknown genre" "$STATUS"
+info "genre as a string" "$STATUS"
 req POST /Books/Create '[1,2,3]'
 info "array where object expected" "$STATUS"
 req POST /Books/Create 'not json at all'

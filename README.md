@@ -11,6 +11,10 @@ Day 2 is a different skill — **black-box** API testing, where nothing exists y
 the entities, DTOs and routes yourself against a fixed external contract. See
 [`day2/README.md`](day2/README.md).
 
+Both exercise sets also have black-box API checks (curl + sqlite3, no C#): Day 2's are the
+exercise itself; the Library ones in [`library-api/`](library-api/README.md) probe how the finished
+API behaves for a web client.
+
 ## Running things
 
 ```bash

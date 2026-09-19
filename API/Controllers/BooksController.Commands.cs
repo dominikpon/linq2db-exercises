@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using API.Dtos;
-using API.Testing;
 using Infa;
 using LinqToDB;
 using Microsoft.AspNetCore.Mvc;
@@ -12,8 +11,8 @@ public partial class BooksController
 {
     /// <summary>Adds a new book to the catalogue. It always starts in print.</summary>
     /// <remarks>
-    /// Validation rules, all of them <see cref="ValidationException"/>: title is required; price
-    /// is not negative; ISBN is null or exactly 13 digits.
+    ///     Validation rules, all of them <see cref="ValidationException" />: title is required; price
+    ///     is not negative; ISBN is null or exactly 13 digits.
     /// </remarks>
     /// <exception cref="ValidationException">Any rule above is broken.</exception>
     /// <exception cref="InvalidOperationException">Another book already carries the same ISBN.</exception>
@@ -23,7 +22,7 @@ public partial class BooksController
         ValidateTitle(request.Title);
         ValidatePrice(request.PriceDkk);
         ValidateIsbn(request.Isbn);
-        EnsureIsbnIsFree(request.Isbn, excluding: null);
+        EnsureIsbnIsFree(request.Isbn, null);
 
         var book = new Book
         {
@@ -41,16 +40,133 @@ public partial class BooksController
         return new BookResponse(book);
     }
 
+    /// <summary>
+    ///     Replaces the columns the request actually supplies; anything left out is left alone.
+    /// </summary>
+    /// <remarks>
+    ///     Every property on the request except the id is optional: <c>null</c> means "leave this
+    ///     alone". There is no way to null a nullable column through this endpoint. Idempotent: sending
+    ///     the same request twice leaves the same row state.
+    /// </remarks>
+    /// <exception cref="ValidationException">A validation rule is broken.</exception>
+    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
+    /// <exception cref="InvalidOperationException">Another book already carries the same ISBN.</exception>
+    [HttpPut(nameof(Update))]
+    public BookResponse Update([FromBody] BookUpdateRequest request)
+    {
+        var existing = db.Books().FirstOrDefault(b => b.Id == request.Id)
+                       ?? throw new KeyNotFoundException("that book does not exist");
+
+        if (request.Title != null)
+        {
+            ValidateTitle(request.Title);
+            existing.Title = request.Title;
+        }
+
+        if (request.Genre != null)
+            existing.Genre = request.Genre.Value;
+
+        if (request.PriceDkk != null)
+        {
+            ValidatePrice(request.PriceDkk.Value);
+            existing.PriceDkk = request.PriceDkk.Value;
+        }
+
+        if (request.IsOutOfPrint != null)
+            existing.IsOutOfPrint = request.IsOutOfPrint.Value;
+
+        if (request.Isbn != null)
+        {
+            ValidateIsbn(request.Isbn);
+            EnsureIsbnIsFree(request.Isbn, existing.Id);
+            existing.Isbn = request.Isbn;
+        }
+
+        if (request.PublishedDate != null)
+            existing.PublishedDate = request.PublishedDate;
+
+        db.Update(existing);
+        return new BookResponse(existing);
+    }
+
+    /// <summary>Removes a book for good — but only once no author is still credited on it.</summary>
+    /// <exception cref="KeyNotFoundException">No row has that id, including when it was already deleted.</exception>
+    /// <exception cref="InvalidOperationException">At least one author is still credited on this book.</exception>
+    [HttpDelete(nameof(Delete))]
+    public void Delete([FromQuery] Guid id)
+    {
+        var book = db.Books().FirstOrDefault(b => b.Id == id) ??
+                   throw new KeyNotFoundException("that book does not exist");
+
+        if (db.AuthorBooks().Any(l => l.BookId == id))
+            throw new InvalidOperationException("unlink this book's authors first");
+
+        db.Delete(book);
+    }
+
+    /// <summary>
+    ///     Takes a book out of print. Idempotent: marking an already out-of-print book is a no-op,
+    ///     not an error.
+    /// </summary>
+    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
+    [HttpPost(nameof(MarkOutOfPrint))]
+    public void MarkOutOfPrint([FromQuery] Guid id)
+    {
+        var book = db.Books().FirstOrDefault(b => b.Id == id) ??
+                   throw new KeyNotFoundException("that book does not exist");
+        book.IsOutOfPrint = true;
+        db.Update(book);
+    }
+
+    /// <summary>Puts an out-of-print book back in print. Idempotent, exactly like <see cref="MarkOutOfPrint" />.</summary>
+    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
+    [HttpPost(nameof(MarkInPrint))]
+    public void MarkInPrint([FromQuery] Guid id)
+    {
+        var book = db.Books().FirstOrDefault(b => b.Id == id) ??
+                   throw new KeyNotFoundException("that book does not exist");
+        book.IsOutOfPrint = false;
+        db.Update(book);
+    }
+
+    private static void ValidateTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ValidationException("title cannot be blank");
+    }
+
+    private static void ValidatePrice(decimal price)
+    {
+        if (price < 0)
+            throw new ValidationException("price cannot be negative");
+    }
+
+    private static void ValidateIsbn(string? isbn)
+    {
+        if (isbn != null && (isbn.Length != 13 || !isbn.All(char.IsDigit)))
+            throw new ValidationException("isbn must be null or exactly 13 digits");
+    }
+
+    private void EnsureIsbnIsFree(string? isbn, Guid? excluding)
+    {
+        if (isbn == null) return;
+        if (db.Books().Any(b => b.Isbn == isbn && b.Id != excluding))
+            throw new InvalidOperationException("that isbn is already taken");
+    }
+
     #region Tests: Create
 
     public class CreateTests : LibraryTest
     {
-        private static BookCreateRequest Sample() => new(
-            Title: "Test Book",
-            Isbn: "1112223334445",
-            Genre: Genre.Fiction,
-            PriceDkk: 99.00m,
-            PublishedDate: new DateOnly(2025, 1, 1));
+        private static BookCreateRequest Sample()
+        {
+            return new BookCreateRequest(
+                "Test Book",
+                "1112223334445",
+                Genre.Fiction,
+                99.00m,
+                new DateOnly(2025, 1, 1));
+        }
 
         [Fact]
         public void Inserts_the_book_and_returns_it()
@@ -89,60 +205,12 @@ public partial class BooksController
         [Fact]
         public void Rejects_an_isbn_that_is_already_taken()
         {
-            Assert.Throws<InvalidOperationException>(() => BooksController.Create(Sample() with { Isbn = "9788700000011" }));
+            Assert.Throws<InvalidOperationException>(() =>
+                BooksController.Create(Sample() with { Isbn = "9788700000011" }));
         }
     }
 
     #endregion
-
-    /// <summary>
-    /// Replaces the columns the request actually supplies; anything left out is left alone.
-    /// </summary>
-    /// <remarks>
-    /// Every property on the request except the id is optional: <c>null</c> means "leave this
-    /// alone". There is no way to null a nullable column through this endpoint. Idempotent: sending
-    /// the same request twice leaves the same row state.
-    /// </remarks>
-    /// <exception cref="ValidationException">A validation rule is broken.</exception>
-    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
-    /// <exception cref="InvalidOperationException">Another book already carries the same ISBN.</exception>
-    [HttpPut(nameof(Update))]
-    public BookResponse Update([FromBody] BookUpdateRequest request)
-    {
-        var existing = db.Books().FirstOrDefault(b => b.Id == request.Id)
-                       ?? throw new KeyNotFoundException("that book does not exist");
-
-        if (request.Title != null)
-        {
-            ValidateTitle(request.Title);
-            existing.Title = request.Title;
-        }
-
-        if (request.Genre != null)
-            existing.Genre = request.Genre.Value;
-
-        if (request.PriceDkk != null)
-        {
-            ValidatePrice(request.PriceDkk.Value);
-            existing.PriceDkk = request.PriceDkk.Value;
-        }
-
-        if (request.IsOutOfPrint != null)
-            existing.IsOutOfPrint = request.IsOutOfPrint.Value;
-
-        if (request.Isbn != null)
-        {
-            ValidateIsbn(request.Isbn);
-            EnsureIsbnIsFree(request.Isbn, excluding: existing.Id);
-            existing.Isbn = request.Isbn;
-        }
-
-        if (request.PublishedDate != null)
-            existing.PublishedDate = request.PublishedDate;
-
-        db.Update(existing);
-        return new BookResponse(existing);
-    }
 
     #region Tests: Update
 
@@ -198,14 +266,16 @@ public partial class BooksController
         [Fact]
         public void Throws_when_the_row_does_not_exist()
         {
-            Assert.Throws<KeyNotFoundException>(() => BooksController.Update(new BookUpdateRequest { Id = Guid.NewGuid(), Title = "Nope" }));
+            Assert.Throws<KeyNotFoundException>(() =>
+                BooksController.Update(new BookUpdateRequest { Id = Guid.NewGuid(), Title = "Nope" }));
         }
 
         [Fact]
         public void Throws_when_the_isbn_belongs_to_another_book()
         {
             var id = LibrarySeed.BookIdOf(1);
-            Assert.Throws<InvalidOperationException>(() => BooksController.Update(new BookUpdateRequest { Id = id, Isbn = "9788700000028" }));
+            Assert.Throws<InvalidOperationException>(() =>
+                BooksController.Update(new BookUpdateRequest { Id = id, Isbn = "9788700000028" }));
         }
 
         [Fact]
@@ -218,20 +288,6 @@ public partial class BooksController
     }
 
     #endregion
-
-    /// <summary>Removes a book for good — but only once no author is still credited on it.</summary>
-    /// <exception cref="KeyNotFoundException">No row has that id, including when it was already deleted.</exception>
-    /// <exception cref="InvalidOperationException">At least one author is still credited on this book.</exception>
-    [HttpDelete(nameof(Delete))]
-    public void Delete([FromQuery] Guid id)
-    {
-        var book = db.Books().FirstOrDefault(b => b.Id == id) ?? throw new KeyNotFoundException("that book does not exist");
-
-        if (db.AuthorBooks().Any(l => l.BookId == id))
-            throw new InvalidOperationException("unlink this book's authors first");
-
-        db.Delete(book);
-    }
 
     #region Tests: Delete
 
@@ -264,19 +320,6 @@ public partial class BooksController
 
     #endregion
 
-    /// <summary>
-    /// Takes a book out of print. Idempotent: marking an already out-of-print book is a no-op,
-    /// not an error.
-    /// </summary>
-    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
-    [HttpPost(nameof(MarkOutOfPrint))]
-    public void MarkOutOfPrint([FromQuery] Guid id)
-    {
-        var book = db.Books().FirstOrDefault(b => b.Id == id) ?? throw new KeyNotFoundException("that book does not exist");
-        book.IsOutOfPrint = true;
-        db.Update(book);
-    }
-
     #region Tests: MarkOutOfPrint
 
     public class MarkOutOfPrintTests : LibraryTest
@@ -307,16 +350,6 @@ public partial class BooksController
 
     #endregion
 
-    /// <summary>Puts an out-of-print book back in print. Idempotent, exactly like <see cref="MarkOutOfPrint"/>.</summary>
-    /// <exception cref="KeyNotFoundException">No row has that id.</exception>
-    [HttpPost(nameof(MarkInPrint))]
-    public void MarkInPrint([FromQuery] Guid id)
-    {
-        var book = db.Books().FirstOrDefault(b => b.Id == id) ?? throw new KeyNotFoundException("that book does not exist");
-        book.IsOutOfPrint = false;
-        db.Update(book);
-    }
-
     #region Tests: MarkInPrint
 
     public class MarkInPrintTests : LibraryTest
@@ -340,29 +373,4 @@ public partial class BooksController
     }
 
     #endregion
-
-    private static void ValidateTitle(string title)
-    {
-        if (string.IsNullOrWhiteSpace(title))
-            throw new ValidationException("title cannot be blank");
-    }
-
-    private static void ValidatePrice(decimal price)
-    {
-        if (price < 0)
-            throw new ValidationException("price cannot be negative");
-    }
-
-    private static void ValidateIsbn(string? isbn)
-    {
-        if (isbn != null && (isbn.Length != 13 || !isbn.All(char.IsDigit)))
-            throw new ValidationException("isbn must be null or exactly 13 digits");
-    }
-
-    private void EnsureIsbnIsFree(string? isbn, Guid? excluding)
-    {
-        if (isbn == null) return;
-        if (db.Books().Any(b => b.Isbn == isbn && b.Id != excluding))
-            throw new InvalidOperationException("that isbn is already taken");
-    }
 }

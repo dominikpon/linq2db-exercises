@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using API.Dtos;
-using API.Testing;
 using Infa;
 using LinqToDB;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +11,9 @@ public partial class AuthorsController
 {
     /// <summary>Adds a new author to the catalogue.</summary>
     /// <remarks>
-    /// Validation rules, all of them <see cref="ValidationException"/>: first and last name are
-    /// required; website is null or starts with <c>http://</c>/<c>https://</c>; birth date is
-    /// null or not in the future.
+    ///     Validation rules, all of them <see cref="ValidationException" />: first and last name are
+    ///     required; website is null or starts with <c>http://</c>/<c>https://</c>; birth date is
+    ///     null or not in the future.
     /// </remarks>
     /// <exception cref="ValidationException">Any rule above is broken.</exception>
     [HttpPost(nameof(Create))]
@@ -40,69 +39,19 @@ public partial class AuthorsController
         return new AuthorResponse(author);
     }
 
-    #region Tests: Create
-
-    public class CreateTests : LibraryTest
-    {
-        private static AuthorCreateRequest Sample() => new(
-            FirstName: "Test",
-            LastName: "Writer",
-            Bio: "A brand new author.",
-            Nationality: "Danish",
-            Website: "https://example.com",
-            BirthDate: new DateOnly(1990, 1, 1));
-
-        [Fact]
-        public void Inserts_the_author_and_returns_it()
-        {
-            var created = AuthorsController.Create(Sample());
-            Assert.NotEqual(Guid.Empty, created.Id);
-            Assert.Equal(12, AuthorCount);
-            Assert.Equal("Test", AuthorRow(created.Id).FirstName);
-        }
-
-        [Fact]
-        public void Stamps_the_creation_time()
-        {
-            var created = AuthorsController.Create(Sample());
-            Assert.InRange(AuthorRow(created.Id).CreatedAtUtc, DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(1));
-        }
-
-        [Fact]
-        public void Rejects_a_blank_name()
-        {
-            Assert.Throws<ValidationException>(() => AuthorsController.Create(Sample() with { FirstName = "  " }));
-            Assert.Throws<ValidationException>(() => AuthorsController.Create(Sample() with { LastName = "" }));
-        }
-
-        [Fact]
-        public void Rejects_a_malformed_website()
-        {
-            Assert.Throws<ValidationException>(() => AuthorsController.Create(Sample() with { Website = "example.com" }));
-        }
-
-        [Fact]
-        public void Rejects_a_birth_date_in_the_future()
-        {
-            Assert.Throws<ValidationException>(() => AuthorsController.Create(Sample() with { BirthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) }));
-        }
-    }
-
-    #endregion
-
     /// <summary>
-    /// Replaces the columns the request actually supplies; anything left out is left alone.
+    ///     Replaces the columns the request actually supplies; anything left out is left alone.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Every property on the request except the id is optional: <c>null</c> means "leave this
-    /// alone". There is no way to null a nullable column through this endpoint.
-    /// </para>
-    /// <para>
-    /// The same validation rules as <see cref="Create"/> apply to whichever fields are actually
-    /// supplied. This is idempotent: sending the same request twice leaves the same row state and
-    /// throws nothing the second time.
-    /// </para>
+    ///     <para>
+    ///         Every property on the request except the id is optional: <c>null</c> means "leave this
+    ///         alone". There is no way to null a nullable column through this endpoint.
+    ///     </para>
+    ///     <para>
+    ///         The same validation rules as <see cref="Create" /> apply to whichever fields are actually
+    ///         supplied. This is idempotent: sending the same request twice leaves the same row state and
+    ///         throws nothing the second time.
+    ///     </para>
     /// </remarks>
     /// <exception cref="ValidationException">A validation rule is broken.</exception>
     /// <exception cref="KeyNotFoundException">No row has that id.</exception>
@@ -145,6 +94,98 @@ public partial class AuthorsController
         db.Update(existing);
         return new AuthorResponse(existing);
     }
+
+    /// <summary>Removes an author for good — but only once nothing they wrote is still credited to them.</summary>
+    /// <exception cref="KeyNotFoundException">No row has that id, including when it was already deleted.</exception>
+    /// <exception cref="InvalidOperationException">The author is still credited on at least one book.</exception>
+    [HttpDelete(nameof(Delete))]
+    public void Delete([FromQuery] Guid id)
+    {
+        var author = db.Authors().FirstOrDefault(a => a.Id == id) ??
+                     throw new KeyNotFoundException("that author does not exist");
+
+        if (db.AuthorBooks().Any(l => l.AuthorId == id))
+            throw new InvalidOperationException("unlink this author's books first");
+
+        db.Delete(author);
+    }
+
+    private static void ValidateName(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ValidationException("first name cannot be blank");
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ValidationException("last name cannot be blank");
+    }
+
+    private static void ValidateWebsite(string? website)
+    {
+        if (website != null && !website.StartsWith("http://") && !website.StartsWith("https://"))
+            throw new ValidationException("website must start with http:// or https://");
+    }
+
+    private static void ValidateBirthDate(DateOnly? birthDate)
+    {
+        if (birthDate != null && birthDate > DateOnly.FromDateTime(DateTime.UtcNow))
+            throw new ValidationException("birth date cannot be in the future");
+    }
+
+    #region Tests: Create
+
+    public class CreateTests : LibraryTest
+    {
+        private static AuthorCreateRequest Sample()
+        {
+            return new AuthorCreateRequest(
+                "Test",
+                "Writer",
+                "A brand new author.",
+                "Danish",
+                "https://example.com",
+                new DateOnly(1990, 1, 1));
+        }
+
+        [Fact]
+        public void Inserts_the_author_and_returns_it()
+        {
+            var created = AuthorsController.Create(Sample());
+            Assert.NotEqual(Guid.Empty, created.Id);
+            Assert.Equal(12, AuthorCount);
+            Assert.Equal("Test", AuthorRow(created.Id).FirstName);
+        }
+
+        [Fact]
+        public void Stamps_the_creation_time()
+        {
+            var created = AuthorsController.Create(Sample());
+            Assert.InRange(AuthorRow(created.Id).CreatedAtUtc, DateTime.UtcNow.AddMinutes(-1),
+                DateTime.UtcNow.AddMinutes(1));
+        }
+
+        [Fact]
+        public void Rejects_a_blank_name()
+        {
+            Assert.Throws<ValidationException>(() => AuthorsController.Create(Sample() with { FirstName = "  " }));
+            Assert.Throws<ValidationException>(() => AuthorsController.Create(Sample() with { LastName = "" }));
+        }
+
+        [Fact]
+        public void Rejects_a_malformed_website()
+        {
+            Assert.Throws<ValidationException>(() =>
+                AuthorsController.Create(Sample() with { Website = "example.com" }));
+        }
+
+        [Fact]
+        public void Rejects_a_birth_date_in_the_future()
+        {
+            Assert.Throws<ValidationException>(() =>
+                AuthorsController.Create(
+                    Sample() with { BirthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) }));
+        }
+    }
+
+    #endregion
 
     #region Tests: Update
 
@@ -200,33 +241,21 @@ public partial class AuthorsController
         [Fact]
         public void Throws_when_the_row_does_not_exist()
         {
-            Assert.Throws<KeyNotFoundException>(() => AuthorsController.Update(new AuthorUpdateRequest { Id = Guid.NewGuid(), FirstName = "Nope" }));
+            Assert.Throws<KeyNotFoundException>(() =>
+                AuthorsController.Update(new AuthorUpdateRequest { Id = Guid.NewGuid(), FirstName = "Nope" }));
         }
 
         [Fact]
         public void Throws_when_a_supplied_field_is_invalid()
         {
             var id = LibrarySeed.AuthorIdOf(1);
-            Assert.Throws<ValidationException>(() => AuthorsController.Update(new AuthorUpdateRequest { Id = id, Website = "not-a-url" }));
+            Assert.Throws<ValidationException>(() =>
+                AuthorsController.Update(new AuthorUpdateRequest { Id = id, Website = "not-a-url" }));
             Assert.Equal("Elena", AuthorRow(id).FirstName);
         }
     }
 
     #endregion
-
-    /// <summary>Removes an author for good — but only once nothing they wrote is still credited to them.</summary>
-    /// <exception cref="KeyNotFoundException">No row has that id, including when it was already deleted.</exception>
-    /// <exception cref="InvalidOperationException">The author is still credited on at least one book.</exception>
-    [HttpDelete(nameof(Delete))]
-    public void Delete([FromQuery] Guid id)
-    {
-        var author = db.Authors().FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException("that author does not exist");
-
-        if (db.AuthorBooks().Any(l => l.AuthorId == id))
-            throw new InvalidOperationException("unlink this author's books first");
-
-        db.Delete(author);
-    }
 
     #region Tests: Delete
 
@@ -258,24 +287,4 @@ public partial class AuthorsController
     }
 
     #endregion
-
-    private static void ValidateName(string firstName, string lastName)
-    {
-        if (string.IsNullOrWhiteSpace(firstName))
-            throw new ValidationException("first name cannot be blank");
-        if (string.IsNullOrWhiteSpace(lastName))
-            throw new ValidationException("last name cannot be blank");
-    }
-
-    private static void ValidateWebsite(string? website)
-    {
-        if (website != null && !website.StartsWith("http://") && !website.StartsWith("https://"))
-            throw new ValidationException("website must start with http:// or https://");
-    }
-
-    private static void ValidateBirthDate(DateOnly? birthDate)
-    {
-        if (birthDate != null && birthDate > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new ValidationException("birth date cannot be in the future");
-    }
 }

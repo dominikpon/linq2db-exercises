@@ -1,1 +1,0 @@
-{"status": 200, "jq": ".title == \"Design mockups\" and .status == \"Todo\" and (.id | length) > 0"}

@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using API.Testing;
 using Infa;
 using LinqToDB;
 using Microsoft.AspNetCore.Mvc;
@@ -8,13 +6,13 @@ using Xunit;
 namespace API.Controllers;
 
 /// <summary>
-/// Commands and queries on the <see cref="AuthorBook"/> junction itself, rather than on
-/// <see cref="Author"/> or <see cref="Book"/>. Listing one side of the relationship lives on the
-/// controller that owns the returned type — <c>AuthorsController.GetForBook</c> and
-/// <c>BooksController.GetByAuthor</c> — this controller only manages the link row.
+///     Commands and queries on the <see cref="AuthorBook" /> junction itself, rather than on
+///     <see cref="Author" /> or <see cref="Book" />. Listing one side of the relationship lives on the
+///     controller that owns the returned type — <c>AuthorsController.GetForBook</c> and
+///     <c>BooksController.GetByAuthor</c> — this controller only manages the link row.
 /// </summary>
 [Route("[controller]")]
-public partial class AuthorBooksController(LibraryDatabase db) : ControllerBase
+public class AuthorBooksController(LibraryDatabase db) : ControllerBase
 {
     /// <summary>Credits an author on a book. Idempotent: linking an already-linked pair is a no-op.</summary>
     /// <exception cref="KeyNotFoundException">Either id is unknown.</exception>
@@ -30,6 +28,22 @@ public partial class AuthorBooksController(LibraryDatabase db) : ControllerBase
             return;
 
         db.Insert(new AuthorBook { AuthorId = authorId, BookId = bookId });
+    }
+
+    /// <summary>Removes an author's credit on a book. Idempotent: unlinking an already-unlinked pair is a no-op.</summary>
+    [HttpDelete(nameof(Unlink))]
+    public void Unlink([FromQuery] Guid authorId, [FromQuery] Guid bookId)
+    {
+        db.AuthorBooks()
+            .Where(l => l.AuthorId == authorId && l.BookId == bookId)
+            .Delete();
+    }
+
+    /// <summary>Whether an author is currently credited on a book.</summary>
+    [HttpGet(nameof(IsLinked))]
+    public bool IsLinked([FromQuery] Guid authorId, [FromQuery] Guid bookId)
+    {
+        return db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == bookId);
     }
 
     #region Tests: Link
@@ -58,21 +72,14 @@ public partial class AuthorBooksController(LibraryDatabase db) : ControllerBase
         [Fact]
         public void Throws_for_an_unknown_author_or_book()
         {
-            Assert.Throws<KeyNotFoundException>(() => AuthorBooksController.Link(Guid.NewGuid(), LibrarySeed.BookIdOf(1)));
-            Assert.Throws<KeyNotFoundException>(() => AuthorBooksController.Link(LibrarySeed.AuthorIdOf(1), Guid.NewGuid()));
+            Assert.Throws<KeyNotFoundException>(() =>
+                AuthorBooksController.Link(Guid.NewGuid(), LibrarySeed.BookIdOf(1)));
+            Assert.Throws<KeyNotFoundException>(() =>
+                AuthorBooksController.Link(LibrarySeed.AuthorIdOf(1), Guid.NewGuid()));
         }
     }
 
     #endregion
-
-    /// <summary>Removes an author's credit on a book. Idempotent: unlinking an already-unlinked pair is a no-op.</summary>
-    [HttpDelete(nameof(Unlink))]
-    public void Unlink([FromQuery] Guid authorId, [FromQuery] Guid bookId)
-    {
-        db.AuthorBooks()
-            .Where(l => l.AuthorId == authorId && l.BookId == bookId)
-            .Delete();
-    }
 
     #region Tests: Unlink
 
@@ -105,13 +112,6 @@ public partial class AuthorBooksController(LibraryDatabase db) : ControllerBase
     }
 
     #endregion
-
-    /// <summary>Whether an author is currently credited on a book.</summary>
-    [HttpGet(nameof(IsLinked))]
-    public bool IsLinked([FromQuery] Guid authorId, [FromQuery] Guid bookId)
-    {
-        return db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == bookId);
-    }
 
     #region Tests: IsLinked
 

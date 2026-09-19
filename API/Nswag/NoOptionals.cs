@@ -1,6 +1,8 @@
 using NJsonSchema;
 using NJsonSchema.Generation;
 
+namespace API.Nswag;
+
 public class RequireNotNullableSchemaProcessor : ISchemaProcessor
 {
     public void Process(SchemaProcessorContext context)

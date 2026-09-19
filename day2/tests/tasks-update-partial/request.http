@@ -1,7 +1,0 @@
-PUT http://127.0.0.1:5299/Tasks/Update
-Content-Type: application/json
-
-{
-  "id": "20000000-0000-4000-a000-000000000001",
-  "title": "New title"
-}

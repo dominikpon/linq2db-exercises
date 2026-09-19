@@ -1,6 +1,0 @@
-POST http://127.0.0.1:5299/Tags/Create
-Content-Type: application/json
-
-{
-  "name": "urgent"
-}

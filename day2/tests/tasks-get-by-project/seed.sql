@@ -1,3 +1,0 @@
-INSERT INTO Projects (Id, Name, Description, CreatedAtUtc) VALUES ('10000000-0000-4000-a000-000000000001', 'Website Redesign', NULL, '2025-01-01 09:00:00.000');
-INSERT INTO Tasks (Id, ProjectId, Title, Status, DueDate, CreatedAtUtc) VALUES ('20000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', 'Design mockups', 'Todo', NULL, '2025-01-02 09:00:00.000');
-INSERT INTO Tasks (Id, ProjectId, Title, Status, DueDate, CreatedAtUtc) VALUES ('20000000-0000-4000-a000-000000000002', '10000000-0000-4000-a000-000000000001', 'Write copy', 'Todo', NULL, '2025-01-03 09:00:00.000');

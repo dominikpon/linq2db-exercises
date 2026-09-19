@@ -4,5 +4,5 @@ req POST /Authors/Create "{\"id\":\"$FAKE\",\"createdAtUtc\":\"1999-01-01T00:00:
 expect_not "server generated its own id" "$(jqb .id)" "$FAKE"
 expect_not "server stamped its own creation time" "$(jqb .createdAtUtc | cut -c1-4)" "1999"
 
-req POST /Books/Create '{"title":"Sneaky","genre":"Fiction","priceDkk":10,"isOutOfPrint":true}'
+req POST /Books/Create '{"title":"Sneaky","genre":0,"priceDkk":10,"isOutOfPrint":true}'
 expect "new book starts in print whatever the client says" "$(sql "SELECT IsOutOfPrint FROM Books WHERE Title='Sneaky'")" "0"
