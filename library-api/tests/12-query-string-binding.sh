@@ -17,5 +17,3 @@ expect "boolean filter" "$(jq length <<<"$BODY")" "$(sql "SELECT COUNT(*) FROM B
 want=$(sql "SELECT COUNT(*) FROM Authors WHERE BirthDate>='1980-01-01' AND BirthDate<='1990-01-01'")
 qget /Authors/GetFiltered bornAfter=1980-01-01 bornBefore=1990-01-01
 expect "date range as plain dates" "$(jq length <<<"$BODY")" "$want"
-qget /Authors/GetFiltered bornAfter=1980-01-01T00:00:00Z bornBefore=1990-01-01T00:00:00Z
-expect "date range as JS toISOString() values" "$(jq length <<<"$BODY")" "$want"

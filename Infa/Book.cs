@@ -23,5 +23,5 @@ public class Book
     [Column] public decimal PriceDkk { get; set; }
     [Column] public bool IsOutOfPrint { get; set; }
     [Column] public DateOnly? PublishedDate { get; set; }
-    [Column] public DateTime CreatedAtUtc { get; set; }
+    [Column] [ValueConverter(ConverterType = typeof(UtcDateTimeConverter))] public DateTime CreatedAtUtc { get; set; }
 }

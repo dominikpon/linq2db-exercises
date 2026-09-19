@@ -13,5 +13,5 @@ public class Author
     [Column] public string? Nationality { get; set; }
     [Column] public string? Website { get; set; }
     [Column] public DateOnly? BirthDate { get; set; }
-    [Column] public DateTime CreatedAtUtc { get; set; }
+    [Column] [ValueConverter(ConverterType = typeof(UtcDateTimeConverter))] public DateTime CreatedAtUtc { get; set; }
 }

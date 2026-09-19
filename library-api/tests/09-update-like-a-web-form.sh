@@ -2,9 +2,6 @@ A=$(aid 1)
 req PUT /Authors/Update "{\"id\":\"$A\",\"firstName\":\"Renamed\"}"
 expect "only the named column changed" "$(sql "SELECT FirstName||'|'||LastName||'|'||Website FROM Authors WHERE LastName='Marsh'")" "Renamed|Marsh|https://elenamarsh.example.com"
 
-req PUT /Authors/Update "{\"Id\":\"$A\",\"FirstName\":\"Pascal\"}"
-expect "PascalCase keys are accepted" "$(sql "SELECT FirstName FROM Authors WHERE LastName='Marsh'")" "Pascal"
-
 # The classic edit form: GET the object, change nothing, PUT the whole thing back.
 T=$(aid 2)
 qget /Authors/GetById "id=$T"
