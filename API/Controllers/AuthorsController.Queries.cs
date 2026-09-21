@@ -37,7 +37,8 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetById))]
     public AuthorResponse GetById([FromQuery] string id)
     {
-        throw new NotImplementedException();
+        var query = db.Authors().FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException();
+        return new AuthorResponse(query);
 
     }
 
@@ -45,7 +46,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(Count))]
     public int Count()
     {
-        throw new NotImplementedException();
+        return db.Authors().Count();
     }
 
     /// <summary>
@@ -57,7 +58,11 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(Search))]
     public List<AuthorResponse> Search([FromQuery] string q)
     {
-        throw new NotImplementedException();
+        if (q == null || string.IsNullOrWhiteSpace(q)) throw new ValidationException();
+
+        return db.Authors()
+            .Where(a => a.FirstName.ToLower().Contains(q.ToLower()) || a.LastName.ToLower().Contains(q.ToLower()))
+            .Select(a => new AuthorResponse(a)).ToList();
     }
 
     /// <summary>One page of authors, ordered by last name then first name.</summary>
@@ -67,7 +72,16 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetPage))]
     public List<AuthorResponse> GetPage([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
-        throw new NotImplementedException();
+        if (page < 1 || size < 1) throw new ValidationException();
+
+        var q = db.Authors()
+            .OrderBy(a => a.LastName)
+            .ThenBy(a => a.FirstName)
+            .Skip(page - 1)
+            .Take(size);
+        var res = q.Select(a => new AuthorResponse(a)).ToList();
+        return res;
+
     }
 
     /// <summary>
@@ -79,8 +93,15 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         IQueryable<Author> query = db.Authors();
         if (by == AuthorSort.BirthDate)
             query = query.OrderBy(a => a.BirthDate);
-        
-        throw new NotImplementedException();
+        if (by == AuthorSort.Created)
+            query = query.OrderBy(a => a.CreatedAtUtc);
+        if (by == AuthorSort.Name)
+            query = query.OrderBy(a => a.FirstName);
+
+        var ret = query.Select(a => new AuthorResponse(a)).ToList();
+        if (descending)
+            ret.Reverse();
+        return ret;
     }
 
     /// <summary>
@@ -99,7 +120,22 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         [FromQuery] DateOnly? bornAfter = null,
         [FromQuery] DateOnly? bornBefore = null)
     {
-        throw new NotImplementedException();
+        IQueryable<Author> query = db.Authors();
+        if (q != null)
+            query = query.Where(a =>
+                a.LastName
+                    .ToLower()
+                    .Contains(q
+                        .ToLower()) || a.FirstName.ToLower().Contains(q.ToLower()));
+
+        if (nationality != null)
+            query = query.Where(a => a.Nationality == nationality);
+        if (bornAfter != null)
+            query = query.Where(a => a.BirthDate < bornAfter);
+        if (bornBefore != null)
+            query = query.Where(a => a.BirthDate > bornBefore);
+
+        return query.Select(a => new AuthorResponse(a)).ToList();
     }
 
     /// <summary>Every author credited on one book, ordered by last name.</summary>
@@ -107,7 +143,12 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetForBook))]
     public List<AuthorResponse> GetForBook([FromQuery] string bookId)
     {
-        throw new NotImplementedException();
+        var book = db.Books()
+            .LoadWith(b => b.Authors)
+            .FirstOrDefault(b => b.Id == bookId) ?? throw new ValidationException();
+
+        return book.Authors.Select(a => new AuthorResponse(a)).ToList();
+
 
     }
 
@@ -116,7 +157,11 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetWithoutBooks))]
     public List<AuthorResponse> GetWithoutBooks()
     {
-        throw new NotImplementedException();
+        IQueryable<Author> query = db.Authors().LoadWith(a => a.Books);
+
+        query = query.Where(a => !a.Books.Any());
+
+        return query.Select(a => new AuthorResponse(a)).ToList();
 
     }
 

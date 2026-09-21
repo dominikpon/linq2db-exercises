@@ -46,7 +46,17 @@ public class LibraryQueriesController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(SearchBooksByAuthor))]
     public List<BookWithAuthorsResponse> SearchBooksByAuthor([FromQuery] string q)
     {
-        throw new NotImplementedException();
+        //1. validate
+        if (string.IsNullOrWhiteSpace(q))
+            throw new ValidationException();
+        //2. Lookup
+        IQueryable<Book> query = db.Books().LoadWith(b => b.Authors);
+        
+        //3.filter
+        query.Where(b => b.Authors.Any(a =>
+            a.FirstName.ToLower().Contains(q.ToLower()) || a.LastName.ToLower().Contains(q.ToLower())));
+        
+        return query.Select(b => new BookWithAuthorsResponse(b)).ToList();
 
     }
 
