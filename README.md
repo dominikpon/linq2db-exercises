@@ -1,32 +1,30 @@
 # linq2db TDD Exercises
 
-
 ## How an exercise is laid out
 
 Each controller is split into `*.Queries.cs` and `*.Commands.cs`. Every action has three parts,
 always in this order:
 
-1. An XML doc comment — the spec. `<summary>` says what it does, `<param>`/`<returns>` say what
-   goes in and out, and `<exception>` enumerates every validation rule as a thrown type.
-2. The method body — this is what you implement. Every one starts as
+1. The commant above the controller method = the spec(ification). `<summary>` says what it does, `<param>`/`<returns>` say what
+   goes in and out, and `<exception>` mentions every validation rule.
+2. The method body: This is what you implement. Every one starts as
    `throw new NotImplementedException();`, so the whole suite begins red. Helpers (validation,
    uniqueness checks) are yours to write too.
-3. A `#region Tests: MethodName` immediately below the method — the behavior pinned down as
-   `[Fact]`s. Don't edit these, and don't change the method's signature; make the body satisfy them.
-
-Run the region's tests as you go (`--filter "FullyQualifiedName~MethodName"`); don't wait until a
-whole controller is done to find out something's wrong.
+3. A `#region Tests: MethodName` immediately below the method: The behavior pinned down as
+   `[Fact]`s. Don't edit these, and don't change the method's signature; make the body pass the test.
 
 ## Recipe: a query
 
 1. **Validate the request.** Throw `System.ComponentModel.DataAnnotations.ValidationException` for
    anything the doc comment's `<exception>` tags call out — bad paging, an inverted range, a
    too-short search term — before touching the database.
-2. **Select the table(s).** Start from `db.Xxx()`. Entities here carry no navigation properties
-   (no `Author.Books`, no `.LoadWith(...)`) — the many-to-many is a plain join table, and every
-   query that crosses it does so explicitly, e.g.
-   `db.Authors().Where(a => db.AuthorBooks().Any(l => l.BookId == bookId && l.AuthorId == a.Id))`.
-   The join happens in SQL, not by materializing one side and matching it in C#.
+2. **Select the table(s).** Start from `db.Xxx()`. Flat queries stay explicit: the many-to-many is a
+   plain join table, so a list of books for one author is
+   `db.Books().Where(b => db.AuthorBooks().Any(l => l.AuthorId == authorId && l.BookId == b.Id))`,
+   joined in SQL rather than matched in C#. When the response is **nested** (a book with its
+   authors, an author with their books) use the association properties `Book.Authors` and
+   `Author.Books` and ask for them with `.LoadWith(b => b.Authors)`. They are not columns and stay
+   empty until you load them; see `LibraryQueriesController`.
 3. **Filter.** Chain `.Where(...)` onto the queryable — one clause per criterion, and only for
    criteria that were actually supplied. A `GetFiltered`-style method builds this up conditionally;
    an omitted filter should never show up in the generated SQL at all.
@@ -76,3 +74,10 @@ the `[Facet(...)]` attribute on each `partial record`. `exclude` keeps server-ow
 (`Id`, `CreatedAtUtc`, ...) off create requests; replace requests keep the `Id` and drop only
 `CreatedAtUtc`; patch requests add `NullableProperties = true` so every generated property becomes
 optional, plus a hand-declared `Id`.
+
+Nested responses are plain records that inherit the flat response and add one list:
+`BookWithAuthorsResponse : BookResponse` (adds `Authors`) and `AuthorWithBooksResponse : AuthorResponse`
+(adds `Books`). Their constructor takes the entity, so load the association with `LoadWith` first and
+then `new BookWithAuthorsResponse(book)`. The nested items are the flat responses, which never carry
+the association back, so there are no cycles. Every flat DTO lists the association property in its
+`exclude`. The order of the nested list is not specified.

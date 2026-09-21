@@ -20,12 +20,14 @@ public sealed class LibraryTestHost : IDisposable
         Authors = ActivatorUtilities.CreateInstance<AuthorsController>(_scope.ServiceProvider);
         Books = ActivatorUtilities.CreateInstance<BooksController>(_scope.ServiceProvider);
         AuthorBooks = ActivatorUtilities.CreateInstance<AuthorBooksController>(_scope.ServiceProvider);
+        Queries = ActivatorUtilities.CreateInstance<LibraryQueriesController>(_scope.ServiceProvider);
     }
 
     public LibraryDatabase Db => _scope.ServiceProvider.GetRequiredService<LibraryDatabase>();
     public AuthorsController Authors { get; }
     public BooksController Books { get; }
     public AuthorBooksController AuthorBooks { get; }
+    public LibraryQueriesController Queries { get; }
 
     public void Dispose()
     {
@@ -42,6 +44,7 @@ public abstract class LibraryTest : IDisposable
     protected AuthorsController AuthorsController => _host.Authors;
     protected BooksController BooksController => _host.Books;
     protected AuthorBooksController AuthorBooksController => _host.AuthorBooks;
+    protected LibraryQueriesController LibraryQueriesController => _host.Queries;
     protected LibraryDatabase Db => _host.Db;
 
     protected ITable<Author> AuthorRows => Db.Authors();
@@ -56,27 +59,27 @@ public abstract class LibraryTest : IDisposable
         _host.Dispose();
     }
 
-    protected Author AuthorRow(Guid id)
+    protected Author AuthorRow(string id)
     {
         return Db.Authors().Single(x => x.Id == id);
     }
 
-    protected Book BookRow(Guid id)
+    protected Book BookRow(string id)
     {
         return Db.Books().Single(x => x.Id == id);
     }
 
-    protected bool AuthorExists(Guid id)
+    protected bool AuthorExists(string id)
     {
         return Db.Authors().Any(x => x.Id == id);
     }
 
-    protected bool BookExists(Guid id)
+    protected bool BookExists(string id)
     {
         return Db.Books().Any(x => x.Id == id);
     }
 
-    protected bool IsLinked(Guid authorId, Guid bookId)
+    protected bool IsLinked(string authorId, string bookId)
     {
         return Db.AuthorBooks().Any(x => x.AuthorId == authorId && x.BookId == bookId);
     }

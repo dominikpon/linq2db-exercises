@@ -16,14 +16,14 @@ public static class LibrarySeed
         db.BulkCopy(BuildLinks());
     }
 
-    public static Guid AuthorIdOf(int index)
+    public static string AuthorIdOf(int index)
     {
-        return Guid.Parse($"{index:00000000}-0000-4000-a000-000000000000");
+        return index.ToString();
     }
 
-    public static Guid BookIdOf(int index)
+    public static string BookIdOf(int index)
     {
-        return Guid.Parse($"{index:00000000}-0000-4000-b000-000000000000");
+        return index.ToString();
     }
 
     public static Author[] BuildAuthors()

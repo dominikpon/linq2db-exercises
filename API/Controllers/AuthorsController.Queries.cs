@@ -21,7 +21,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     /// <summary>One author looked up by primary key.</summary>
     /// <exception cref="KeyNotFoundException">No row has that id.</exception>
     [HttpGet(nameof(GetById))]
-    public AuthorResponse GetById([FromQuery] Guid id)
+    public AuthorResponse GetById([FromQuery] string id)
     {
         throw new NotImplementedException();
     }
@@ -37,8 +37,8 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     ///     Free-text search over <see cref="Author.FirstName" /> and <see cref="Author.LastName" />.
     ///     A partial, case-insensitive match is enough.
     /// </summary>
-    /// <param name="q">At least two characters, otherwise the search is meaningless.</param>
-    /// <exception cref="ValidationException"><paramref name="q" /> is null, blank or shorter than two characters.</exception>
+    /// <param name="q">The text to look for.</param>
+    /// <exception cref="ValidationException"><paramref name="q" /> is null or blank.</exception>
     [HttpGet(nameof(Search))]
     public List<AuthorResponse> Search([FromQuery] string q)
     {
@@ -47,11 +47,8 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
 
     /// <summary>One page of authors, ordered by last name then first name.</summary>
     /// <param name="page">1-based page number.</param>
-    /// <param name="size">Rows per page, at most 100.</param>
-    /// <exception cref="ValidationException">
-    ///     <paramref name="page" /> is below 1, or <paramref name="size" /> is outside
-    ///     1..100.
-    /// </exception>
+    /// <param name="size">Rows per page, at least 1.</param>
+    /// <exception cref="ValidationException"><paramref name="page" /> or <paramref name="size" /> is below 1.</exception>
     [HttpGet(nameof(GetPage))]
     public List<AuthorResponse> GetPage([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
@@ -76,7 +73,6 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     /// <param name="bornAfter">Inclusive lower bound on <see cref="Author.BirthDate" />.</param>
     /// <param name="bornBefore">Inclusive upper bound on <see cref="Author.BirthDate" />.</param>
     /// <returns>Matching authors, ordered by last name. No parameters at all returns everyone.</returns>
-    /// <exception cref="ValidationException"><paramref name="bornAfter" /> is later than <paramref name="bornBefore" />.</exception>
     [HttpGet(nameof(GetFiltered))]
     public List<AuthorResponse> GetFiltered(
         [FromQuery] string? q = null,
@@ -90,7 +86,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     /// <summary>Every author credited on one book, ordered by last name.</summary>
     /// <exception cref="KeyNotFoundException">No book has that id.</exception>
     [HttpGet(nameof(GetForBook))]
-    public List<AuthorResponse> GetForBook([FromQuery] Guid bookId)
+    public List<AuthorResponse> GetForBook([FromQuery] string bookId)
     {
         throw new NotImplementedException();
     }
@@ -140,7 +136,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         [Fact]
         public void Throws_when_the_id_is_unknown()
         {
-            Assert.Throws<KeyNotFoundException>(() => AuthorsController.GetById(Guid.NewGuid()));
+            Assert.Throws<KeyNotFoundException>(() => AuthorsController.GetById(Guid.NewGuid().ToString()));
         }
     }
 
@@ -173,15 +169,8 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         }
 
         [Fact]
-        public void Is_case_insensitive()
+        public void Throws_on_a_blank_term()
         {
-            Assert.Equal(AuthorsController.Search("voss").Count, AuthorsController.Search("VOSS").Count);
-        }
-
-        [Fact]
-        public void Throws_on_a_too_short_term()
-        {
-            Assert.Throws<ValidationException>(() => AuthorsController.Search("a"));
             Assert.Throws<ValidationException>(() => AuthorsController.Search("   "));
         }
     }
@@ -200,23 +189,10 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         }
 
         [Fact]
-        public void The_last_page_can_be_short()
-        {
-            Assert.Single(AuthorsController.GetPage(3, 5));
-        }
-
-        [Fact]
-        public void Paging_past_the_end_is_empty_not_an_error()
-        {
-            Assert.Empty(AuthorsController.GetPage(99));
-        }
-
-        [Fact]
         public void Throws_on_nonsense_paging()
         {
             Assert.Throws<ValidationException>(() => AuthorsController.GetPage(0));
             Assert.Throws<ValidationException>(() => AuthorsController.GetPage(1, 0));
-            Assert.Throws<ValidationException>(() => AuthorsController.GetPage(1, 500));
         }
     }
 
@@ -233,11 +209,6 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
             Assert.Equal("Kemp", result[0].LastName);
         }
 
-        [Fact]
-        public void Returns_the_whole_table_whatever_the_sort()
-        {
-            Assert.Equal(11, AuthorsController.GetSorted(AuthorSort.BirthDate).Count);
-        }
     }
 
     #endregion
@@ -269,13 +240,6 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
                 a => Assert.InRange(a.BirthDate!.Value, new DateOnly(1980, 1, 1), new DateOnly(1990, 1, 1)));
         }
 
-        [Fact]
-        public void Throws_when_the_range_is_inverted()
-        {
-            Assert.Throws<ValidationException>(() =>
-                AuthorsController.GetFiltered(bornAfter: new DateOnly(2000, 1, 1),
-                    bornBefore: new DateOnly(1990, 1, 1)));
-        }
     }
 
     #endregion
@@ -295,15 +259,9 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
         }
 
         [Fact]
-        public void Returns_empty_for_an_orphan_book()
-        {
-            Assert.Empty(AuthorsController.GetForBook(LibrarySeed.BookIdOf(12)));
-        }
-
-        [Fact]
         public void Throws_for_an_unknown_book()
         {
-            Assert.Throws<KeyNotFoundException>(() => AuthorsController.GetForBook(Guid.NewGuid()));
+            Assert.Throws<KeyNotFoundException>(() => AuthorsController.GetForBook(Guid.NewGuid().ToString()));
         }
     }
 

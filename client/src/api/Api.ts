@@ -10,183 +10,157 @@
  * ---------------------------------------------------------------
  */
 
-export enum GrocerySort {
-  Name = "Name",
-  Price = "Price",
-  Stock = "Stock",
-  Rating = "Rating",
-  Created = "Created",
+export enum BookSort {
+  Title = 0,
+  Price = 1,
+  Published = 2,
+  Created = 3,
 }
 
-export enum Supplier {
-  LocalFarm = "LocalFarm",
-  Wholesale = "Wholesale",
-  Import = "Import",
+export enum Genre {
+  Fiction = 0,
+  NonFiction = 1,
+  SciFi = 2,
+  Fantasy = 3,
+  Mystery = 4,
+  Biography = 5,
 }
 
-export enum StorageType {
-  Ambient = "Ambient",
-  Chilled = "Chilled",
-  Frozen = "Frozen",
+export enum AuthorSort {
+  Name = 0,
+  BirthDate = 1,
+  Created = 2,
 }
 
-export interface GroceryItem {
-  /** @format guid */
+export interface AuthorResponse {
   id: string;
-  name: string;
-  brand?: string | null;
-  category: string;
-  tags?: string | null;
-  barcode?: string | null;
-  /** @format decimal */
-  priceDkk: number;
-  /** @format decimal */
-  discountPercent?: number | null;
-  /**
-   * @format int32
-   * @min 1
-   * @max 2147483647
-   */
-  stockCount: number;
-  /** @format int32 */
-  timesPurchased: number;
-  /** @format double */
-  weightKg: number;
-  /** @format double */
-  ratingAvg?: number | null;
-  isOrganic: boolean;
-  isDiscontinued: boolean;
-  storage: StorageType;
-  suppliedBy: Supplier;
+  firstName: string;
+  lastName: string;
+  bio?: string | null;
+  nationality?: string | null;
+  website?: string | null;
+  /** @format date */
+  birthDate?: string | null;
   /** @format date-time */
   createdAtUtc: string;
-  /** @format date-time */
-  lastPurchasedAtUtc?: string | null;
+}
+
+export interface AuthorCreateRequest {
+  firstName: string;
+  lastName: string;
+  bio?: string | null;
+  nationality?: string | null;
+  website?: string | null;
   /** @format date */
-  bestBefore?: string | null;
-  /** @format duration */
-  preparationTime?: string | null;
+  birthDate?: string | null;
 }
 
-export interface MyAwesomeCrudCreateGroceryItemParams {
-  name?: string;
-  category?: string;
-  branc?: string;
+export interface AuthorUpdateRequest {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  bio?: string | null;
+  nationality?: string | null;
+  website?: string | null;
+  /** @format date */
+  birthDate?: string | null;
+}
+
+export interface AuthorReplaceRequest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  bio?: string | null;
+  nationality?: string | null;
+  website?: string | null;
+  /** @format date */
+  birthDate?: string | null;
+}
+
+export interface BookResponse {
+  id: string;
+  title: string;
+  isbn?: string | null;
+  genre: Genre;
+  /** @format decimal */
+  priceDkk: number;
+  isOutOfPrint: boolean;
+  /** @format date */
+  publishedDate?: string | null;
   /** @format date-time */
-  createdAt?: string;
+  createdAtUtc: string;
 }
 
-export interface MyAwesomeCrudUpdateThingParams {
-  /** @format guid */
-  id?: string;
+export interface BookCreateRequest {
+  title: string;
+  isbn?: string | null;
+  genre: Genre;
   /** @format decimal */
-  newDiscount?: number;
+  priceDkk: number;
+  /** @format date */
+  publishedDate?: string | null;
 }
 
-export interface MyAwesomeCrudDeleteThingParams {
-  /** @format guid */
-  id?: string;
-}
-
-export interface GroceriesDiscontinueParams {
-  /** @format guid */
-  id?: string;
-}
-
-export interface GroceriesReactivateParams {
-  /** @format guid */
-  id?: string;
-}
-
-export interface GroceriesRestockParams {
-  category?: string;
-  /** @format int32 */
-  amount?: number;
-}
-
-export interface GroceriesClearDiscountsParams {
-  category?: string;
-}
-
-export interface GroceriesApplyDiscountParams {
-  category?: string;
+export interface BookUpdateRequest {
+  id: string;
+  title?: string | null;
+  isbn?: string | null;
+  genre?: Genre | null;
   /** @format decimal */
-  percent?: number;
+  priceDkk?: number | null;
+  isOutOfPrint?: boolean | null;
+  /** @format date */
+  publishedDate?: string | null;
 }
 
-export interface GroceriesDeleteParams {
-  /** @format guid */
-  id?: string;
-}
-
-export interface GroceriesPurchaseParams {
-  /** @format guid */
-  id?: string;
-  /**
-   * @format int32
-   * @default 1
-   */
-  quantity?: number;
-}
-
-export interface GroceriesTransferStockParams {
-  /** @format guid */
-  fromId?: string;
-  /** @format guid */
-  toId?: string;
-  /** @format int32 */
-  amount?: number;
-}
-
-export interface GroceriesGetByStorageParams {
-  storage?: StorageType;
-}
-
-export interface GroceriesGetByCategoryParams {
-  category?: string;
-}
-
-export interface GroceriesGetByIdParams {
-  /** @format guid */
-  id?: string;
-}
-
-export interface GroceriesExistsParams {
-  barcode?: string;
-}
-
-export interface GroceriesGetByBarcodeParams {
-  barcode?: string;
-}
-
-export interface GroceriesGetByPriceRangeParams {
+export interface BookReplaceRequest {
+  id: string;
+  title: string;
+  isbn?: string | null;
+  genre: Genre;
   /** @format decimal */
-  min?: number | null;
-  /** @format decimal */
-  max?: number | null;
+  priceDkk: number;
+  isOutOfPrint: boolean;
+  /** @format date */
+  publishedDate?: string | null;
 }
 
-export interface GroceriesSearchParams {
+export type BookWithAuthorsResponse = BookResponse & {
+  authors: AuthorResponse[];
+};
+
+export type AuthorWithBooksResponse = AuthorResponse & {
+  books: BookResponse[];
+};
+
+export interface AuthorBooksLinkParams {
+  authorId?: string;
+  bookId?: string;
+}
+
+export interface AuthorBooksUnlinkParams {
+  authorId?: string;
+  bookId?: string;
+}
+
+export interface AuthorBooksIsLinkedParams {
+  authorId?: string;
+  bookId?: string;
+}
+
+export interface AuthorsDeleteParams {
+  id?: string;
+}
+
+export interface AuthorsGetByIdParams {
+  id?: string;
+}
+
+export interface AuthorsSearchParams {
   q?: string;
 }
 
-export interface GroceriesCountInCategoryParams {
-  category?: string;
-}
-
-export interface GroceriesCountByStorageParams {
-  storage?: StorageType;
-}
-
-export interface GroceriesGetTopPurchasedParams {
-  /**
-   * @format int32
-   * @default 5
-   */
-  n?: number;
-}
-
-export interface GroceriesGetPageParams {
+export interface AuthorsGetPageParams {
   /**
    * @format int32
    * @default 1
@@ -199,67 +173,114 @@ export interface GroceriesGetPageParams {
   size?: number;
 }
 
-export interface GroceriesGetSortedParams {
-  by?: GrocerySort;
+export interface AuthorsGetSortedParams {
+  by?: AuthorSort;
   /** @default false */
   descending?: boolean;
 }
 
-export interface GroceriesGetAveragePriceInCategoryParams {
-  category?: string;
+export interface AuthorsGetFilteredParams {
+  q?: string | null;
+  nationality?: string | null;
+  /** @format date */
+  bornAfter?: string | null;
+  /** @format date */
+  bornBefore?: string | null;
 }
 
-export interface GroceriesGetExpiringParams {
-  /**
-   * @format int32
-   * @default 7
-   */
-  days?: number;
+export interface AuthorsGetForBookParams {
+  bookId?: string;
 }
 
-export interface GroceriesGetRecentlyAddedParams {
-  /**
-   * @format int32
-   * @default 180
-   */
-  days?: number;
-}
-
-export interface GroceriesGetStaleParams {
-  /**
-   * @format int32
-   * @default 30
-   */
-  days?: number;
-}
-
-export interface GroceriesGetQuickToPrepareParams {
-  /**
-   * @format int32
-   * @default 15
-   */
-  maxMinutes?: number;
-}
-
-export interface GroceriesGetByTagParams {
-  tag?: string;
-}
-
-export interface GroceriesGetPriceAfterDiscountParams {
-  /** @format guid */
+export interface BooksDeleteParams {
   id?: string;
 }
 
-export interface GroceriesGetFilteredParams {
+export interface BooksMarkOutOfPrintParams {
+  id?: string;
+}
+
+export interface BooksMarkInPrintParams {
+  id?: string;
+}
+
+export interface BooksGetByIdParams {
+  id?: string;
+}
+
+export interface BooksSearchParams {
+  q?: string;
+}
+
+export interface BooksGetPageParams {
+  /**
+   * @format int32
+   * @default 1
+   */
+  page?: number;
+  /**
+   * @format int32
+   * @default 10
+   */
+  size?: number;
+}
+
+export interface BooksGetSortedParams {
+  by?: BookSort;
+  /** @default false */
+  descending?: boolean;
+}
+
+export interface BooksGetFilteredParams {
   q?: string | null;
-  category?: string | null;
-  storage?: StorageType | null;
-  isOrganic?: boolean | null;
-  inStock?: boolean | null;
+  genre?: Genre | null;
+  outOfPrint?: boolean | null;
   /** @format decimal */
   minPrice?: number | null;
   /** @format decimal */
   maxPrice?: number | null;
+}
+
+export interface BooksGetByAuthorParams {
+  authorId?: string;
+}
+
+export interface LibraryQueriesGetBooksWithAuthorsParams {
+  /**
+   * @format int32
+   * @default 1
+   */
+  page?: number;
+  /**
+   * @format int32
+   * @default 10
+   */
+  size?: number;
+}
+
+export interface LibraryQueriesGetBookWithAuthorsParams {
+  id?: string;
+}
+
+export interface LibraryQueriesSearchBooksByAuthorParams {
+  q?: string;
+}
+
+export interface LibraryQueriesGetAuthorsWithBooksParams {
+  /**
+   * @format int32
+   * @default 1
+   */
+  page?: number;
+  /**
+   * @format int32
+   * @default 10
+   */
+  size?: number;
+}
+
+export interface LibraryQueriesGetAuthorWithBooksParams {
+  id?: string;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -525,927 +546,657 @@ export class HttpClient<SecurityDataType = unknown> {
 export class Api<
   SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
-  createGroceryItem = {
+  authorBooks = {
     /**
      * No description
      *
-     * @tags MyAwesomeCrud
-     * @name MyAwesomeCrudCreateGroceryItem
-     * @request POST:/CreateGroceryItem
+     * @tags AuthorBooks
+     * @name AuthorBooksLink
+     * @request POST:/AuthorBooks/Link
      */
-    myAwesomeCrudCreateGroceryItem: (
-      query: MyAwesomeCrudCreateGroceryItemParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<number, any>({
-        path: `/CreateGroceryItem`,
-        method: "POST",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  updateThing = {
-    /**
-     * No description
-     *
-     * @tags MyAwesomeCrud
-     * @name MyAwesomeCrudUpdateThing
-     * @request PUT:/UpdateThing
-     */
-    myAwesomeCrudUpdateThing: (
-      query: MyAwesomeCrudUpdateThingParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem, any>({
-        path: `/UpdateThing`,
-        method: "PUT",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  deleteThing = {
-    /**
-     * No description
-     *
-     * @tags MyAwesomeCrud
-     * @name MyAwesomeCrudDeleteThing
-     * @request DELETE:/DeleteThing
-     */
-    myAwesomeCrudDeleteThing: (
-      query: MyAwesomeCrudDeleteThingParams = {},
+    authorBooksLink: (
+      query: AuthorBooksLinkParams = {},
       params: RequestParams = {},
     ) =>
       this.request<void, any>({
-        path: `/DeleteThing`,
+        path: `/AuthorBooks/Link`,
+        method: "POST",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AuthorBooks
+     * @name AuthorBooksUnlink
+     * @request DELETE:/AuthorBooks/Unlink
+     */
+    authorBooksUnlink: (
+      query: AuthorBooksUnlinkParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/AuthorBooks/Unlink`,
         method: "DELETE",
         query: query,
         ...params,
       }),
-  };
-  discontinue = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesDiscontinue
-     * @request POST:/Discontinue
+     * @tags AuthorBooks
+     * @name AuthorBooksIsLinked
+     * @request GET:/AuthorBooks/IsLinked
      */
-    groceriesDiscontinue: (
-      query: GroceriesDiscontinueParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/Discontinue`,
-        method: "POST",
-        query: query,
-        ...params,
-      }),
-  };
-  reactivate = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesReactivate
-     * @request PATCH:/Reactivate
-     */
-    groceriesReactivate: (
-      query: GroceriesReactivateParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/Reactivate`,
-        method: "PATCH",
-        query: query,
-        ...params,
-      }),
-  };
-  restock = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesRestock
-     * @request POST:/Restock
-     */
-    groceriesRestock: (
-      query: GroceriesRestockParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<number, any>({
-        path: `/Restock`,
-        method: "POST",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  clearDiscounts = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesClearDiscounts
-     * @request POST:/ClearDiscounts
-     */
-    groceriesClearDiscounts: (
-      query: GroceriesClearDiscountsParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<number, any>({
-        path: `/ClearDiscounts`,
-        method: "POST",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  applyDiscount = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesApplyDiscount
-     * @request POST:/ApplyDiscount
-     */
-    groceriesApplyDiscount: (
-      query: GroceriesApplyDiscountParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<number, any>({
-        path: `/ApplyDiscount`,
-        method: "POST",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  deleteExpired = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesDeleteExpired
-     * @request DELETE:/DeleteExpired
-     */
-    groceriesDeleteExpired: (params: RequestParams = {}) =>
-      this.request<number, any>({
-        path: `/DeleteExpired`,
-        method: "DELETE",
-        format: "json",
-        ...params,
-      }),
-  };
-  delete = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesDelete
-     * @request DELETE:/Delete
-     */
-    groceriesDelete: (
-      query: GroceriesDeleteParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/Delete`,
-        method: "DELETE",
-        query: query,
-        ...params,
-      }),
-  };
-  create = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesCreate
-     * @request POST:/Create
-     */
-    groceriesCreate: (data: GroceryItem, params: RequestParams = {}) =>
-      this.request<string, any>({
-        path: `/Create`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-  };
-  purchase = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesPurchase
-     * @request POST:/Purchase
-     */
-    groceriesPurchase: (
-      query: GroceriesPurchaseParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/Purchase`,
-        method: "POST",
-        query: query,
-        ...params,
-      }),
-  };
-  update = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesUpdate
-     * @request PUT:/Update
-     */
-    groceriesUpdate: (data: GroceryItem, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/Update`,
-        method: "PUT",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-  };
-  upsert = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesUpsert
-     * @request PUT:/Upsert
-     */
-    groceriesUpsert: (data: GroceryItem, params: RequestParams = {}) =>
-      this.request<string, any>({
-        path: `/Upsert`,
-        method: "PUT",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-  };
-  import = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesImport
-     * @request POST:/Import
-     */
-    groceriesImport: (data: GroceryItem[], params: RequestParams = {}) =>
-      this.request<number, any>({
-        path: `/Import`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-  };
-  transferStock = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesTransferStock
-     * @request POST:/TransferStock
-     */
-    groceriesTransferStock: (
-      query: GroceriesTransferStockParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/TransferStock`,
-        method: "POST",
-        query: query,
-        ...params,
-      }),
-  };
-  getAllMyGroceries = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetAllMyGroceries
-     * @request GET:/GetAllMyGroceries
-     */
-    groceriesGetAllMyGroceries: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetAllMyGroceries`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  count = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesCount
-     * @request GET:/Count
-     */
-    groceriesCount: (params: RequestParams = {}) =>
-      this.request<number, any>({
-        path: `/Count`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getOrganic = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetOrganic
-     * @request GET:/GetOrganic
-     */
-    groceriesGetOrganic: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetOrganic`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getByStorage = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetByStorage
-     * @request GET:/GetByStorage
-     */
-    groceriesGetByStorage: (
-      query: GroceriesGetByStorageParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetByStorage`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getOutOfStock = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetOutOfStock
-     * @request GET:/GetOutOfStock
-     */
-    groceriesGetOutOfStock: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetOutOfStock`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getIncomplete = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetIncomplete
-     * @request GET:/GetIncomplete
-     */
-    groceriesGetIncomplete: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetIncomplete`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getDiscounted = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetDiscounted
-     * @request GET:/GetDiscounted
-     */
-    groceriesGetDiscounted: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetDiscounted`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getByCategory = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetByCategory
-     * @request GET:/GetByCategory
-     */
-    groceriesGetByCategory: (
-      query: GroceriesGetByCategoryParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetByCategory`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getById = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetById
-     * @request GET:/GetById
-     */
-    groceriesGetById: (
-      query: GroceriesGetByIdParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem, any>({
-        path: `/GetById`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  exists = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesExists
-     * @request GET:/Exists
-     */
-    groceriesExists: (
-      query: GroceriesExistsParams = {},
+    authorBooksIsLinked: (
+      query: AuthorBooksIsLinkedParams = {},
       params: RequestParams = {},
     ) =>
       this.request<boolean, any>({
-        path: `/Exists`,
+        path: `/AuthorBooks/IsLinked`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
   };
-  getByBarcode = {
+  authors = {
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetByBarcode
-     * @request GET:/GetByBarcode
+     * @tags Authors
+     * @name AuthorsCreate
+     * @request POST:/Authors/Create
      */
-    groceriesGetByBarcode: (
-      query: GroceriesGetByBarcodeParams = {},
+    authorsCreate: (data: AuthorCreateRequest, params: RequestParams = {}) =>
+      this.request<AuthorResponse, any>({
+        path: `/Authors/Create`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsUpdate
+     * @request PATCH:/Authors/Update
+     */
+    authorsUpdate: (data: AuthorUpdateRequest, params: RequestParams = {}) =>
+      this.request<AuthorResponse, any>({
+        path: `/Authors/Update`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsReplace
+     * @request PUT:/Authors/Replace
+     */
+    authorsReplace: (data: AuthorReplaceRequest, params: RequestParams = {}) =>
+      this.request<AuthorResponse, any>({
+        path: `/Authors/Replace`,
+        method: "PUT",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsDelete
+     * @request DELETE:/Authors/Delete
+     */
+    authorsDelete: (
+      query: AuthorsDeleteParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem, any>({
-        path: `/GetByBarcode`,
+      this.request<void, any>({
+        path: `/Authors/Delete`,
+        method: "DELETE",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsGetAll
+     * @request GET:/Authors/GetAll
+     */
+    authorsGetAll: (params: RequestParams = {}) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/GetAll`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsGetById
+     * @request GET:/Authors/GetById
+     */
+    authorsGetById: (
+      query: AuthorsGetByIdParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<AuthorResponse, any>({
+        path: `/Authors/GetById`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getByPriceRange = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetByPriceRange
-     * @request GET:/GetByPriceRange
+     * @tags Authors
+     * @name AuthorsCount
+     * @request GET:/Authors/Count
      */
-    groceriesGetByPriceRange: (
-      query: GroceriesGetByPriceRangeParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetByPriceRange`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  search = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesSearch
-     * @request GET:/Search
-     */
-    groceriesSearch: (
-      query: GroceriesSearchParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem[], any>({
-        path: `/Search`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getCategories = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetCategories
-     * @request GET:/GetCategories
-     */
-    groceriesGetCategories: (params: RequestParams = {}) =>
-      this.request<string[], any>({
-        path: `/GetCategories`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  countInCategory = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesCountInCategory
-     * @request GET:/CountInCategory
-     */
-    groceriesCountInCategory: (
-      query: GroceriesCountInCategoryParams = {},
-      params: RequestParams = {},
-    ) =>
+    authorsCount: (params: RequestParams = {}) =>
       this.request<number, any>({
-        path: `/CountInCategory`,
+        path: `/Authors/Count`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsSearch
+     * @request GET:/Authors/Search
+     */
+    authorsSearch: (
+      query: AuthorsSearchParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/Search`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  countByStorage = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesCountByStorage
-     * @request GET:/CountByStorage
+     * @tags Authors
+     * @name AuthorsGetPage
+     * @request GET:/Authors/GetPage
      */
-    groceriesCountByStorage: (
-      query: GroceriesCountByStorageParams = {},
+    authorsGetPage: (
+      query: AuthorsGetPageParams = {},
       params: RequestParams = {},
     ) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/GetPage`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsGetSorted
+     * @request GET:/Authors/GetSorted
+     */
+    authorsGetSorted: (
+      query: AuthorsGetSortedParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/GetSorted`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsGetFiltered
+     * @request GET:/Authors/GetFiltered
+     */
+    authorsGetFiltered: (
+      query: AuthorsGetFilteredParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/GetFiltered`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsGetForBook
+     * @request GET:/Authors/GetForBook
+     */
+    authorsGetForBook: (
+      query: AuthorsGetForBookParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/GetForBook`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Authors
+     * @name AuthorsGetWithoutBooks
+     * @request GET:/Authors/GetWithoutBooks
+     */
+    authorsGetWithoutBooks: (params: RequestParams = {}) =>
+      this.request<AuthorResponse[], any>({
+        path: `/Authors/GetWithoutBooks`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+  };
+  books = {
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksCreate
+     * @request POST:/Books/Create
+     */
+    booksCreate: (data: BookCreateRequest, params: RequestParams = {}) =>
+      this.request<BookResponse, any>({
+        path: `/Books/Create`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksUpdate
+     * @request PATCH:/Books/Update
+     */
+    booksUpdate: (data: BookUpdateRequest, params: RequestParams = {}) =>
+      this.request<BookResponse, any>({
+        path: `/Books/Update`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksReplace
+     * @request PUT:/Books/Replace
+     */
+    booksReplace: (data: BookReplaceRequest, params: RequestParams = {}) =>
+      this.request<BookResponse, any>({
+        path: `/Books/Replace`,
+        method: "PUT",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksDelete
+     * @request DELETE:/Books/Delete
+     */
+    booksDelete: (query: BooksDeleteParams = {}, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/Books/Delete`,
+        method: "DELETE",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksMarkOutOfPrint
+     * @request POST:/Books/MarkOutOfPrint
+     */
+    booksMarkOutOfPrint: (
+      query: BooksMarkOutOfPrintParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/Books/MarkOutOfPrint`,
+        method: "POST",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksMarkInPrint
+     * @request POST:/Books/MarkInPrint
+     */
+    booksMarkInPrint: (
+      query: BooksMarkInPrintParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/Books/MarkInPrint`,
+        method: "POST",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksGetAll
+     * @request GET:/Books/GetAll
+     */
+    booksGetAll: (params: RequestParams = {}) =>
+      this.request<BookResponse[], any>({
+        path: `/Books/GetAll`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksGetById
+     * @request GET:/Books/GetById
+     */
+    booksGetById: (
+      query: BooksGetByIdParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<BookResponse, any>({
+        path: `/Books/GetById`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksCount
+     * @request GET:/Books/Count
+     */
+    booksCount: (params: RequestParams = {}) =>
       this.request<number, any>({
-        path: `/CountByStorage`,
+        path: `/Books/Count`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksSearch
+     * @request GET:/Books/Search
+     */
+    booksSearch: (query: BooksSearchParams = {}, params: RequestParams = {}) =>
+      this.request<BookResponse[], any>({
+        path: `/Books/Search`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getTopPurchased = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetTopPurchased
-     * @request GET:/GetTopPurchased
+     * @tags Books
+     * @name BooksGetPage
+     * @request GET:/Books/GetPage
      */
-    groceriesGetTopPurchased: (
-      query: GroceriesGetTopPurchasedParams = {},
+    booksGetPage: (
+      query: BooksGetPageParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetTopPurchased`,
+      this.request<BookResponse[], any>({
+        path: `/Books/GetPage`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getPage = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetPage
-     * @request GET:/GetPage
+     * @tags Books
+     * @name BooksGetSorted
+     * @request GET:/Books/GetSorted
      */
-    groceriesGetPage: (
-      query: GroceriesGetPageParams = {},
+    booksGetSorted: (
+      query: BooksGetSortedParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetPage`,
+      this.request<BookResponse[], any>({
+        path: `/Books/GetSorted`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getSorted = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetSorted
-     * @request GET:/GetSorted
+     * @tags Books
+     * @name BooksGetFiltered
+     * @request GET:/Books/GetFiltered
      */
-    groceriesGetSorted: (
-      query: GroceriesGetSortedParams = {},
+    booksGetFiltered: (
+      query: BooksGetFilteredParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetSorted`,
+      this.request<BookResponse[], any>({
+        path: `/Books/GetFiltered`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getAveragePrice = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetAveragePrice
-     * @request GET:/GetAveragePrice
+     * @tags Books
+     * @name BooksGetByAuthor
+     * @request GET:/Books/GetByAuthor
      */
-    groceriesGetAveragePrice: (params: RequestParams = {}) =>
+    booksGetByAuthor: (
+      query: BooksGetByAuthorParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<BookResponse[], any>({
+        path: `/Books/GetByAuthor`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksGetWithoutAuthors
+     * @request GET:/Books/GetWithoutAuthors
+     */
+    booksGetWithoutAuthors: (params: RequestParams = {}) =>
+      this.request<BookResponse[], any>({
+        path: `/Books/GetWithoutAuthors`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Books
+     * @name BooksGetAveragePrice
+     * @request GET:/Books/GetAveragePrice
+     */
+    booksGetAveragePrice: (params: RequestParams = {}) =>
       this.request<number, any>({
-        path: `/GetAveragePrice`,
+        path: `/Books/GetAveragePrice`,
         method: "GET",
         format: "json",
         ...params,
       }),
   };
-  getTotalStockValue = {
+  libraryQueries = {
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetTotalStockValue
-     * @request GET:/GetTotalStockValue
+     * @tags LibraryQueries
+     * @name LibraryQueriesGetBooksWithAuthors
+     * @request GET:/LibraryQueries/GetBooksWithAuthors
      */
-    groceriesGetTotalStockValue: (params: RequestParams = {}) =>
-      this.request<number, any>({
-        path: `/GetTotalStockValue`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getAverageRating = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetAverageRating
-     * @request GET:/GetAverageRating
-     */
-    groceriesGetAverageRating: (params: RequestParams = {}) =>
-      this.request<number | null, any>({
-        path: `/GetAverageRating`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getAveragePriceInCategory = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetAveragePriceInCategory
-     * @request GET:/GetAveragePriceInCategory
-     */
-    groceriesGetAveragePriceInCategory: (
-      query: GroceriesGetAveragePriceInCategoryParams = {},
+    libraryQueriesGetBooksWithAuthors: (
+      query: LibraryQueriesGetBooksWithAuthorsParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<number, any>({
-        path: `/GetAveragePriceInCategory`,
+      this.request<BookWithAuthorsResponse[], any>({
+        path: `/LibraryQueries/GetBooksWithAuthors`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getExpired = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetExpired
-     * @request GET:/GetExpired
+     * @tags LibraryQueries
+     * @name LibraryQueriesGetBookWithAuthors
+     * @request GET:/LibraryQueries/GetBookWithAuthors
      */
-    groceriesGetExpired: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetExpired`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getExpiring = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetExpiring
-     * @request GET:/GetExpiring
-     */
-    groceriesGetExpiring: (
-      query: GroceriesGetExpiringParams = {},
+    libraryQueriesGetBookWithAuthors: (
+      query: LibraryQueriesGetBookWithAuthorsParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetExpiring`,
+      this.request<BookWithAuthorsResponse, any>({
+        path: `/LibraryQueries/GetBookWithAuthors`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getRecentlyAdded = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetRecentlyAdded
-     * @request GET:/GetRecentlyAdded
+     * @tags LibraryQueries
+     * @name LibraryQueriesSearchBooksByAuthor
+     * @request GET:/LibraryQueries/SearchBooksByAuthor
      */
-    groceriesGetRecentlyAdded: (
-      query: GroceriesGetRecentlyAddedParams = {},
+    libraryQueriesSearchBooksByAuthor: (
+      query: LibraryQueriesSearchBooksByAuthorParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetRecentlyAdded`,
+      this.request<BookWithAuthorsResponse[], any>({
+        path: `/LibraryQueries/SearchBooksByAuthor`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getStale = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetStale
-     * @request GET:/GetStale
+     * @tags LibraryQueries
+     * @name LibraryQueriesGetAuthorsWithBooks
+     * @request GET:/LibraryQueries/GetAuthorsWithBooks
      */
-    groceriesGetStale: (
-      query: GroceriesGetStaleParams = {},
+    libraryQueriesGetAuthorsWithBooks: (
+      query: LibraryQueriesGetAuthorsWithBooksParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetStale`,
+      this.request<AuthorWithBooksResponse[], any>({
+        path: `/LibraryQueries/GetAuthorsWithBooks`,
         method: "GET",
         query: query,
         format: "json",
         ...params,
       }),
-  };
-  getQuickToPrepare = {
+
     /**
      * No description
      *
-     * @tags Groceries
-     * @name GroceriesGetQuickToPrepare
-     * @request GET:/GetQuickToPrepare
+     * @tags LibraryQueries
+     * @name LibraryQueriesGetAuthorWithBooks
+     * @request GET:/LibraryQueries/GetAuthorWithBooks
      */
-    groceriesGetQuickToPrepare: (
-      query: GroceriesGetQuickToPrepareParams = {},
+    libraryQueriesGetAuthorWithBooks: (
+      query: LibraryQueriesGetAuthorWithBooksParams = {},
       params: RequestParams = {},
     ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetQuickToPrepare`,
+      this.request<AuthorWithBooksResponse, any>({
+        path: `/LibraryQueries/GetAuthorWithBooks`,
         method: "GET",
         query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getLatest = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetLatest
-     * @request GET:/GetLatest
-     */
-    groceriesGetLatest: (params: RequestParams = {}) =>
-      this.request<GroceryItem, any>({
-        path: `/GetLatest`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getLastPurchased = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetLastPurchased
-     * @request GET:/GetLastPurchased
-     */
-    groceriesGetLastPurchased: (params: RequestParams = {}) =>
-      this.request<GroceryItem, any>({
-        path: `/GetLastPurchased`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-  };
-  getByTag = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetByTag
-     * @request GET:/GetByTag
-     */
-    groceriesGetByTag: (
-      query: GroceriesGetByTagParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetByTag`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getPriceAfterDiscount = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetPriceAfterDiscount
-     * @request GET:/GetPriceAfterDiscount
-     */
-    groceriesGetPriceAfterDiscount: (
-      query: GroceriesGetPriceAfterDiscountParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<number, any>({
-        path: `/GetPriceAfterDiscount`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getFiltered = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetFiltered
-     * @request GET:/GetFiltered
-     */
-    groceriesGetFiltered: (
-      query: GroceriesGetFilteredParams = {},
-      params: RequestParams = {},
-    ) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetFiltered`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
-  getCheapestPerCategory = {
-    /**
-     * No description
-     *
-     * @tags Groceries
-     * @name GroceriesGetCheapestPerCategory
-     * @request GET:/GetCheapestPerCategory
-     */
-    groceriesGetCheapestPerCategory: (params: RequestParams = {}) =>
-      this.request<GroceryItem[], any>({
-        path: `/GetCheapestPerCategory`,
-        method: "GET",
         format: "json",
         ...params,
       }),

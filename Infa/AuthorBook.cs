@@ -10,6 +10,6 @@ namespace Infa;
 [Table("AuthorBooks")]
 public class AuthorBook
 {
-    [PrimaryKey(1)] [Column] public Guid AuthorId { get; set; }
-    [PrimaryKey(2)] [Column] public Guid BookId { get; set; }
+    [PrimaryKey(1)] [Column] public string AuthorId { get; set; } = "";
+    [PrimaryKey(2)] [Column] public string BookId { get; set; } = "";
 }

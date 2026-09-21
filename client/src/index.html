@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <title>Bun + React</title>
+    <script>
+      // Runs before Bun's dev client, so a failed request reaches the toast and not Bun's error overlay.
+      window.addEventListener(
+        "unhandledrejection",
+        (e) => {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          window.dispatchEvent(new CustomEvent("request-failed", { detail: e.reason }));
+        },
+        true,
+      );
+    </script>
   </head>
   <body>
     <div id="root"></div>
