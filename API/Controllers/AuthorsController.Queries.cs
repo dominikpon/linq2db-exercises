@@ -15,7 +15,13 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetAll))]
     public List<AuthorResponse> GetAll()
     {
-        throw new NotImplementedException();
+        var query = db.Authors()
+            .OrderBy(a => a.LastName)
+            .ThenBy(a => a.FirstName)
+            .ToList();
+        var response = query
+            .Select(a => new AuthorResponse(a)).ToList();
+        return response;
     }
 
     /// <summary>One author looked up by primary key.</summary>
@@ -30,7 +36,7 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(Count))]
     public int Count()
     {
-        throw new NotImplementedException();
+        return db.Authors().Count();
     }
 
     /// <summary>

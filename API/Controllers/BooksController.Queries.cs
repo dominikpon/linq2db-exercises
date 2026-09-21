@@ -26,10 +26,7 @@ public partial class BooksController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetById))]
     public BookResponse GetById([FromQuery] string id)
     {
-        return db.Books()
-            .Where(b => b.Id == id)
-            .Select(BookResponse.Projection)
-            .FirstOrDefault() ?? throw new KeyNotFoundException("that book does not exist");
+        throw new NotImplementedException();
     }
 
     /// <summary>How many books the table holds.</summary>
