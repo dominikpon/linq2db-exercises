@@ -24,15 +24,7 @@ public class LibraryQueriesController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetBooksWithAuthors))]
     public List<BookWithAuthorsResponse> GetBooksWithAuthors([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
-        if (page < 1 || size > 100 || size < 1)
-            throw new ValidationException();
-        var q = db.Books()
-            .LoadWith(b => b.Authors)
-            .OrderBy(b => b.Title)
-            .Skip((page - 1) * size)
-            .Take(size);
-        var mapped = q.Select(a => new BookWithAuthorsResponse(a)).ToList();
-        return mapped;
+        throw new NotImplementedException();
     }
 
     /// <summary>One book with its authors.</summary>
@@ -40,11 +32,7 @@ public class LibraryQueriesController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetBookWithAuthors))]
     public BookWithAuthorsResponse GetBookWithAuthors([FromQuery] string id)
     {
-        return db.Books().LoadWith(b => b.Authors)
-            .Where(b => b.Id == id)
-            .Select(b => new BookWithAuthorsResponse(b))
-            .FirstOrDefault() ?? throw new KeyNotFoundException();
-        
+        throw new NotImplementedException();
 
     }
 
