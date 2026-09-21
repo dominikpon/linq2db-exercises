@@ -145,7 +145,16 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetWithoutBooks))]
     public List<AuthorResponse> GetWithoutBooks()
     {
-        throw new NotImplementedException();
+        //lookup
+        IQueryable<Author> query = db.Authors()
+            .LoadWith(a => a.Books);
+        
+        //filter
+        query = query.Where(a => !a.Books.Any());
+        
+        //map
+        return query.Select(a => new AuthorResponse(a)).ToList();
+
     }
 
     #region Tests: GetAll
