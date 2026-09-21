@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using API.Dtos;
 using API.Enums;
 using Infa;
+using LinqToDB;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 
@@ -29,7 +30,14 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetById))]
     public AuthorResponse GetById([FromQuery] string id)
     {
-        throw new NotImplementedException();
+        //1) query variable with lookup:
+        IQueryable<Author> query = db.Authors();
+
+        //2) Filter / lookup or throw
+        var author = query.FirstOrDefault(a => a.Id == id) ?? throw new KeyNotFoundException();
+
+        //3) return mapped object
+        return new AuthorResponse(author);
     }
 
     /// <summary>How many authors the table holds.</summary>
@@ -48,7 +56,20 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(Search))]
     public List<AuthorResponse> Search([FromQuery] string q)
     {
-        throw new NotImplementedException();
+        //throw exception if violating the data validation
+        if (string.IsNullOrWhiteSpace(q))
+            throw new ValidationException();
+        
+        //lookup
+        IQueryable<Author> query = db.Authors();
+           
+            //filtered
+            query =  query.Where(a => a.FirstName.ToLower().Contains(q.ToLower())
+                                 || a.LastName.ToLower().Contains(q.ToLower()));
+            
+            //return mapped object
+            return query.Select(a => new AuthorResponse(a)).ToList();
+
     }
 
     /// <summary>One page of authors, ordered by last name then first name.</summary>
@@ -67,7 +88,20 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetSorted))]
     public List<AuthorResponse> GetSorted([FromQuery] AuthorSort by, [FromQuery] bool descending = false)
     {
-        throw new NotImplementedException();
+        //lookup
+        IQueryable<Author> query = db.Authors();
+
+        if(by==AuthorSort.BirthDate)
+            query = query.OrderBy(a => a.BirthDate);
+        if (by == AuthorSort.Name)
+            query = query.OrderBy(a => a.FirstName);
+        if (by == AuthorSort.Created)
+            query = query.OrderBy(a => a.CreatedAtUtc);
+
+        var objects = query.Select(a => new AuthorResponse(a)).ToList();
+        if(descending)
+            objects.Reverse();
+        return objects;
     }
 
     /// <summary>
@@ -94,7 +128,16 @@ public partial class AuthorsController(LibraryDatabase db) : ControllerBase
     [HttpGet(nameof(GetForBook))]
     public List<AuthorResponse> GetForBook([FromQuery] string bookId)
     {
-        throw new NotImplementedException();
+        //1) Lookup
+        var book = db.Books()
+            //be sure to join / include relational data
+            .LoadWith(b => b.Authors)
+            //throw if not found / lookup by ID
+            .FirstOrDefault(b => b.Id == bookId) ?? throw new KeyNotFoundException("doesnt exist");
+
+        //return the mapped object
+        return book.Authors.Select(a => new AuthorResponse(a)).ToList();
+
     }
 
     /// <summary>Authors with no book credited to them at all.</summary>
